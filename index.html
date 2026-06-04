@@ -3,85 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的智慧帳本 v13.0 完全雲端優先版</title>
+    <title>我的智慧帳本 v13.1 雲端極簡版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --dark-bg: #1a252f;
+            --light-bg: #f4f6f9;
+            --border-color: #e2e8f0;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--light-bg);
             margin: 0;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             justify-content: center;
+            color: var(--text-main);
         }
+
         /* 雲端強制鎖定遮罩 */
         #cloudLoadingLock {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.96);
             z-index: 9999;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 18px;
-            font-weight: bold;
-            color: #2b6cb0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
         }
         .lock-spinner {
-            width: 50px; height: 50px;
-            border: 5px solid #e2e8f0;
-            border-top: 5px solid #3182ce;
+            width: 40px; height: 40px;
+            border: 4px solid #edf2f7;
+            border-top: 4px solid var(--primary-color);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .main-layout {
             display: flex;
-            gap: 20px;
+            gap: 16px;
             width: 100%;
-            max-width: 1450px;
+            max-width: 1400px;
         }
         .container {
             background-color: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
             flex: 1.3;
         }
         .sidebar {
             background-color: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.04);
             flex: 0.7;
             display: flex;
             flex-direction: column;
-            gap: 25px;
+            gap: 20px;
         }
-        h2, h3 { margin-top: 0; color: #2d3748; }
-        h2 { text-align: center; }
         
+        h2, h3, h4 { margin-top: 0; color: var(--text-main); }
+        h2 { font-size: 22px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        h3 { font-size: 16px; border-left: 4px solid var(--primary-color); padding-left: 8px; margin-bottom: 12px; }
+        
+        /* 精簡優化版雲端狀態燈 */
         .cloud-status-bar {
             background-color: #e8f4fd;
             border: 1px solid #bee3f8;
-            color: #2b6cb0;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+            color: var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 6px;
             font-size: 13px;
-            font-weight: bold;
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 16px;
         }
         .sync-loading-spinner {
             display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid #2b6cb0;
+            width: 12px; height: 12px;
+            border: 2px solid var(--primary-color);
             border-radius: 50%;
             border-top-color: transparent;
             animation: spin 1s linear infinite;
@@ -89,107 +104,111 @@
 
         /* 看板 */
         .dashboard {
-            background-color: #17252a;
+            background-color: var(--dark-bg);
             color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
         }
-        .balance-title { font-size: 14px; color: #a8b2b7; text-align: center; }
-        .balance-amount { font-size: 32px; font-weight: bold; text-align: center; margin: 5px 0 15px 0; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #2b3a42; padding-top: 12px; }
+        .balance-title { font-size: 12px; color: #94a3b8; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+        .balance-amount { font-size: 28px; font-weight: 700; text-align: center; margin: 4px 0 12px 0; letter-spacing: -0.5px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid #2c3e50; padding-top: 10px; }
         .dashboard .stat-box { text-align: center; }
-        .stat-label { font-size: 12px; color: #a8b2b7; }
-        .stat-value { font-size: 16px; font-weight: bold; margin-top: 3px; }
-        .text-income { color: #2ecc71; }
-        .text-expense { color: #e74c3c; }
+        .stat-label { font-size: 11px; color: #94a3b8; }
+        .stat-value { font-size: 14px; font-weight: 600; margin-top: 2px; }
+        .text-income { color: var(--success-color); }
+        .text-expense { color: var(--danger-color); }
 
         /* 帳戶清單 */
-        .account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .account-card { background: #f8f9fa; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; display: flex; flex-direction: column; }
-        .account-name { font-size: 13px; font-weight: bold; color: #4a5568; }
-        .account-val { font-size: 15px; font-weight: bold; margin-top: 4px; }
-        .account-card.credit { border-left: 4px solid #e74c3c; }
-        .account-card.asset { border-left: 4px solid #2ecc71; }
-        .account-input-group { display: flex; gap: 5px; margin-top: 5px; }
-        .account-input-group input { padding: 5px; font-size: 11px; width: 65px; height: 24px; box-sizing: border-box; }
+        .account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .account-card { background: #f8fafc; border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 6px; display: flex; flex-direction: column; }
+        .account-name { font-size: 12px; font-weight: 600; color: #475569; }
+        .account-val { font-size: 14px; font-weight: 700; margin-top: 2px; }
+        .account-card.credit { border-left: 3px solid var(--danger-color); }
+        .account-card.asset { border-left: 3px solid var(--success-color); }
+        .account-input-group { display: flex; gap: 4px; margin-top: 6px; }
+        .account-input-group input { padding: 3px 5px; font-size: 11px; width: 100%; height: 22px; box-sizing: border-box; }
 
-        /* 表單 */
-        .form-group { margin-bottom: 12px; }
+        /* 表單元素 */
+        .form-group { margin-bottom: 10px; }
         .form-row { display: flex; gap: 10px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
-        label { display: block; margin-bottom: 5px; color: #4a4a4a; font-weight: bold; font-size: 14px; }
-        input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccd1d9; border-radius: 8px; font-size: 15px; background-color: #f8f9fa; }
-        input:focus, select:focus { border-color: #3498db; outline: none; background-color: white; }
+        label { display: block; margin-bottom: 4px; color: #475569; font-weight: 600; font-size: 12px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background-color: #f8fafc; color: var(--text-main); }
+        input:focus, select:focus { border-color: var(--primary-color); outline: none; background-color: white; box-shadow: 0 0 0 2px rgba(43,108,176,0.1); }
         
-        button { padding: 8px 12px; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .btn-add { background-color: #3498db; width: 100%; padding: 12px; margin-bottom: 10px; font-size: 16px; }
-        .btn-add:hover { background-color: #2980b9; }
-        .btn-clear { background-color: #95a5a6; font-size: 12px; padding: 4px 8px; }
-        .btn-save { background-color: #2ecc71; font-size: 12px; padding: 4px 8px; }
-        .btn-backup { font-size: 12px; width: 100%; margin-bottom: 8px;}
+        button { padding: 6px 12px; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s ease; }
+        .btn-add { background-color: var(--primary-color); width: 100%; padding: 10px; font-size: 15px; margin-top: 4px; }
+        .btn-add:hover { background-color: #1d4ed8; }
+        .btn-clear { background-color: #94a3b8; font-size: 11px; padding: 3px 6px; }
+        .btn-clear:hover { background-color: #64748b; }
+        .btn-save { background-color: var(--success-color); font-size: 11px; padding: 3px 6px; }
+        .btn-save:hover { background-color: #21a357; }
+        .btn-backup { font-size: 12px; width: 100%; padding: 8px; margin-bottom: 6px;}
 
         /* 歷史明細 */
-        .history { margin-top: 25px; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-        .history-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 12px; margin-bottom: 15px; }
-        .history-controls { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .control-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-        .control-item { flex: 1; min-width: 160px; }
-        .control-item label { font-size: 12px; color: #718096; margin-bottom: 3px; }
-        .control-item select, .control-item input { padding: 6px 10px; font-size: 13px; border-radius: 6px; }
+        .history { margin-top: 16px; background: #fff; border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
+        .history-controls { background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .control-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .control-item { flex: 1; min-width: 140px; }
+        .control-item label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+        .control-item select, .control-item input { padding: 4px 6px; font-size: 12px; border-radius: 4px; }
         
-        .btn-toggle-view { background-color: #4a5568; font-size: 12px; display: flex; align-items: center; gap: 4px; }
-        .history-list-wrapper { display: block; max-height: 500px; overflow-y: auto; padding-right: 5px; }
+        .btn-toggle-view { background-color: #475569; font-size: 11px; padding: 3px 6px; display: flex; align-items: center; gap: 2px; }
+        .btn-toggle-view:hover { background-color: #334155; }
+        .history-list-wrapper { display: block; max-height: 400px; overflow-y: auto; padding-right: 4px; }
         .history-list-wrapper.collapsed { display: none; }
 
-        .history-item { background: white; padding: 10px 15px; border: 1px solid #e2e8f0; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .item-left { border-left: 5px solid #ccc; padding-left: 10px; }
-        .item-left.income-border { border-left-color: #2ecc71; }
-        .item-left.expense-border { border-left-color: #e74c3c; }
+        .history-item { background: white; padding: 8px 12px; border: 1px solid var(--border-color); margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .item-left { border-left: 4px solid #cbd5e1; padding-left: 8px; }
+        .item-left.income-border { border-left-color: var(--success-color); }
+        .item-left.expense-border { border-left-color: var(--danger-color); }
         .item-left.transfer-border { border-left-color: #9b59b6; }
         
-        .item-date { font-size: 12px; color: #4a5568; font-weight: bold; margin-bottom: 2px; }
-        .item-title { font-weight: bold; color: #2d3748; }
-        .item-note { font-size: 13px; color: #718096; margin-top: 2px; }
-        .item-acc-tag { display: inline-block; background: #e2e8f0; color: #4a5568; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 5px; }
-        .item-sub-tag { display: inline-block; background: #edf2f7; color: #718096; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
-        .item-right { display: flex; align-items: center; gap: 15px; }
-        .item-amount { font-weight: bold; font-size: 16px; }
-        .btn-delete { background: none; color: #a0aec0; border: none; padding: 5px; cursor: pointer; font-size: 14px; }
-        .btn-delete:hover { color: #e74c3c; }
+        .item-date { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+        .item-title { font-weight: 600; color: var(--text-main); font-size: 13px; margin: 2px 0; }
+        .item-note { font-size: 12px; color: var(--text-muted); }
+        .item-acc-tag { display: inline-block; background: #e2e8f0; color: #475569; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-right: 4px; font-weight: 600; }
+        .item-sub-tag { display: inline-block; background: #f1f5f9; color: #64748b; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; }
+        .item-right { display: flex; align-items: center; gap: 10px; }
+        .item-amount { font-weight: 700; font-size: 14px; }
+        .btn-delete { background: none; color: #94a3b8; border: none; padding: 2px; cursor: pointer; font-size: 12px; }
+        .btn-delete:hover { color: var(--danger-color); }
 
         /* 預算看板 */
-        .budget-section { border-top: 1px solid #e2e8f0; padding-top: 20px; }
-        .budget-item { margin-bottom: 12px; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #edf2f7; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .budget-info { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; align-items: center; }
-        .progress-bar-bg { background-color: #edf2f7; border-radius: 10px; height: 8px; width: 100%; overflow: hidden; margin-bottom: 4px; }
-        .progress-bar-bg.year-bg { height: 5px; margin-top: 2px; }
+        .budget-section { border-top: 1px solid var(--border-color); padding-top: 12px; }
+        .budget-item { margin-bottom: 8px; background: #fff; padding: 8px; border-radius: 6px; border: 1px solid #f1f5f9; box-shadow: 0 1px 3px rgba(0,0,0,0.01); }
+        .budget-info { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; align-items: center; }
+        .progress-bar-bg { background-color: #e2e8f0; border-radius: 4px; height: 6px; width: 100%; overflow: hidden; margin-bottom: 2px; }
+        .progress-bar-bg.year-bg { height: 4px; margin-top: 2px; }
         .progress-bar-fill { background-color: #3498db; height: 100%; width: 0%; transition: width 0.3s; }
         .progress-bar-fill.year-fill { background-color: #e67e22; }
-        .progress-over { background-color: #e74c3c !important; }
+        .progress-over { background-color: var(--danger-color) !important; }
         
-        .budget-action-btns { display: flex; gap: 6px; align-items: center; }
-        .btn-budget-edit { background: none; color: #3498db; border: none; padding: 2px 4px; cursor: pointer; font-size: 12px; }
-        .btn-budget-delete { background: none; color: #a0aec0; border: none; padding: 2px 5px; cursor: pointer; font-size: 12px; }
-        .btn-budget-delete:hover { color: #e74c3c; }
+        .budget-action-btns { display: flex; gap: 4px; align-items: center; }
+        .btn-budget-edit, .btn-budget-delete { background: none; color: #94a3b8; border: none; padding: 1px 3px; cursor: pointer; font-size: 11px; }
+        .btn-budget-edit:hover { color: var(--primary-color); }
+        .btn-budget-delete:hover { color: var(--danger-color); }
         
-        .budget-summary-box { background-color: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 8px; padding: 12px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; text-align: center; }
-        .budget-summary-row { display: grid; grid-template-columns: 80px 1fr 1fr 1fr; gap: 8px; align-items: center; }
-        .budget-summary-row.header { border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 2px; }
-        .budget-summary-title { font-size: 12px; font-weight: bold; color: #4a5568; text-align: left; }
-        .budget-summary-label { font-size: 11px; color: #718096; font-weight: bold; }
-        .budget-summary-val { font-size: 14px; font-weight: bold; color: #2d3748; }
+        .budget-summary-box { background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; text-align: center; }
+        .budget-summary-row { display: grid; grid-template-columns: 70px 1fr 1fr 1fr; gap: 4px; align-items: center; }
+        .budget-summary-row.header { border-bottom: 1px solid var(--border-color); padding-bottom: 2px; margin-bottom: 2px; }
+        .budget-summary-title { font-size: 11px; font-weight: 700; color: #475569; text-align: left; }
+        .budget-summary-label { font-size: 10px; color: var(--text-muted); font-weight: 600; }
+        .budget-summary-val { font-size: 12px; font-weight: 700; color: var(--text-main); }
 
-        .backup-zone { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 5px; }
+        .backup-zone { background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px; }
 
-        /* 圖表 */
-        .analysis-section { background-color: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 25px; }
-        .charts-wrapper { display: flex; flex-direction: column; gap: 20px; margin-top: 15px; }
-        .chart-box-standalone { background: white; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0; height: 320px; position: relative; }
-        .chart-box-standalone h4 { margin: 0 0 10px 0; color: #4a5568; font-size: 14px; text-align: center; }
+        /* 圖表摺疊整合控制 */
+        .analysis-section { background-color: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid var(--border-color); margin-top: 16px; }
+        .charts-wrapper { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
+        .charts-wrapper.collapsed { display: none; }
+        .chart-box-standalone { background: white; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); height: 260px; position: relative; }
+        .chart-box-standalone h4 { margin: 0 0 6px 0; color: #475569; font-size: 12px; text-align: center; }
 
-        .custom-budget-zone { background: #f0f7ff; padding: 15px; border-radius: 10px; border: 1px solid #bee3f8; margin-top: 15px; }
-        .custom-budget-item { border-left: 4px solid #3182ce; background: #fff; }
+        .custom-budget-zone { background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px solid #bee3f8; margin-top: 10px; }
+        .custom-budget-item { border-left: 3px solid #3182ce; background: #fff; }
     </style>
 </head>
 <body>
@@ -201,12 +220,13 @@
 
 <div class="main-layout">
     <div class="container">
-        <h2>我的多帳戶智慧帳本 v13.0 雲端絕對優先版 ☁️</h2>
-        
-        <div class="cloud-status-bar" id="cloudStatusBar">
-            <span id="cloudStatusText">正在連接 Google 雲端主機...</span>
-            <div class="sync-loading-spinner" id="cloudStatusSpinner"></div>
-        </div>
+        <h2>
+            <span>我的智慧帳本 v13.1 雲端極簡版 ☁️</span>
+            <div class="cloud-status-bar" id="cloudStatusBar" style="margin-bottom:0; padding:4px 8px; font-size:11px;">
+                <span id="cloudStatusText">正在連接雲端...</span>&nbsp;
+                <div class="sync-loading-spinner" id="cloudStatusSpinner"></div>
+            </div>
+        </h2>
 
         <div class="dashboard">
             <div class="balance-title">淨資產總額 (資產 - 信用卡負債)</div>
@@ -223,7 +243,7 @@
             </div>
         </div>
         
-        <div class="form-row" style="margin-bottom: 12px;">
+        <div class="form-row" style="margin-bottom: 8px;">
             <div class="form-group" style="flex: 0.6;">
                 <label for="type">交易類型</label>
                 <select id="type" onchange="handleTypeChange()">
@@ -242,7 +262,7 @@
             </div>
         </div>
 
-        <div class="form-row" id="transferGroup" style="display: none; margin-bottom: 12px;">
+        <div class="form-row" id="transferGroup" style="display: none; margin-bottom: 8px;">
             <div class="form-group">
                 <label for="fromAccountSelect">轉出帳戶 ➖</label>
                 <select id="fromAccountSelect"></select>
@@ -253,7 +273,7 @@
             </div>
         </div>
 
-        <div class="form-row" id="categoryRow" style="margin-bottom: 12px;">
+        <div class="form-row" id="categoryRow" style="margin-bottom: 8px;">
             <div class="form-group">
                 <label for="mainCategory" id="mainCatLabel">支出大項</label>
                 <select id="mainCategory" onchange="handleMainCategoryChange()"></select>
@@ -278,18 +298,22 @@
         <button class="btn-add" id="btnAddRecordBtn" onclick="addRecord()">新增並同步上雲端</button>
 
         <div class="analysis-section">
-            <h3>🎛️ 進階獨立視覺圖表大面板</h3>
-            <div class="form-row" style="margin-bottom: 15px;">
-                <div class="form-group">
-                    <label style="font-size:12px;">圖表篩選開始日期</label>
-                    <input type="date" id="analysisStartDate" onchange="updateUI()">
-                </div>
-                <div class="form-group">
-                    <label style="font-size:12px;">圖表篩選結束日期</label>
-                    <input type="date" id="analysisEndDate" onchange="updateUI()">
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin-bottom: 0;">🎛️ 視覺圖表分析大面板</h3>
+                <button class="btn-toggle-view" id="btnToggleCharts" style="background-color: var(--primary-color);" onclick="toggleChartsCollapse()">📊 開啟視覺圖表</button>
             </div>
-            <div class="charts-wrapper">
+            
+            <div class="charts-wrapper collapsed" id="chartsWrapper">
+                <div class="form-row" style="margin-bottom: 8px; margin-top: 8px;">
+                    <div class="form-group">
+                        <label style="font-size:11px;">圖表篩選開始日期</label>
+                        <input type="date" id="analysisStartDate" onchange="updateUI()">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:11px;">圖表篩選結束日期</label>
+                        <input type="date" id="analysisEndDate" onchange="updateUI()">
+                    </div>
+                </div>
                 <div class="chart-box-standalone">
                     <h4>圖表一：期間內各項支出比例分佈 💸</h4>
                     <canvas id="expensePieChart"></canvas>
@@ -307,15 +331,15 @@
 
         <div class="history">
             <div class="history-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <h3>歷史明細</h3>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <h3 style="margin-bottom: 0;">歷史明細</h3>
                     <button class="btn-toggle-view" id="btnToggleCollapse" onclick="toggleHistoryCollapse()">📂 收合明細</button>
                 </div>
                 <button class="btn-clear" onclick="clearAllRecords()">清空明細</button>
             </div>
             <div class="history-controls">
                 <div class="control-row">
-                    <div class="control-item" style="flex: 0.5; min-width: 100px;">
+                    <div class="control-item" style="flex: 0.5; min-width: 90px;">
                         <label>時間過濾模式</label>
                         <select id="filterTimeMode" onchange="handleTimeModeChange()">
                             <option value="month">按月份查 📅</option>
@@ -327,12 +351,12 @@
                         <select id="filterMonthSelect" onchange="updateUI()"></select>
                     </div>
                     <div class="control-item" id="filterDaysGroup" style="display:none; flex: 1.5;">
-                        <div style="display:flex; gap:5px; align-items:center;">
+                        <div style="display:flex; gap:4px; align-items:center;">
                             <div>
                                 <label>開始天數</label>
                                 <input type="date" id="filterStartDate" onchange="updateUI()">
                             </div>
-                            <div style="margin-top:18px; color:#718096;">至</div>
+                            <div style="margin-top:14px; color:var(--text-muted); font-size:12px;">至</div>
                             <div>
                                 <label>結束天數</label>
                                 <input type="date" id="filterEndDate" onchange="updateUI()">
@@ -371,42 +395,42 @@
         <div class="budget-section">
             <h3>🎯 智慧型預算控管看板</h3>
             
-            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
-                <label for="budgetMonthSelect" style="font-size:12px;">切換預算控管月份</label>
-                <select id="budgetMonthSelect" onchange="updateUI()" style="padding:5px; font-size:13px; margin-bottom:10px;"></select>
+            <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 10px;">
+                <label for="budgetMonthSelect" style="font-size:11px;">切換預算控管月份</label>
+                <select id="budgetMonthSelect" onchange="updateUI()" style="padding:4px; font-size:12px; margin-bottom:8px; height:28px;"></select>
 
-                <label for="budgetCategory" style="font-size:12px;">1. 設定傳統單一預算大項</label>
-                <select id="budgetCategory" style="margin-bottom: 5px; padding:5px; font-size:13px;"></select>
-                <div style="display: flex; gap: 8px;">
-                    <input type="number" id="budgetAmountInput" placeholder="設定金額" style="padding:5px; font-size:13px;">
+                <label for="budgetCategory" style="font-size:11px;">1. 設定傳統單一預算大項</label>
+                <select id="budgetCategory" style="margin-bottom: 6px; padding:4px; font-size:12px; height:28px;"></select>
+                <div style="display: flex; gap: 6px;">
+                    <input type="number" id="budgetAmountInput" placeholder="設定金額" style="padding:4px; font-size:12px; height:28px;">
                     <button class="btn-save" onclick="saveBudget()">設定</button>
                 </div>
             </div>
 
             <div class="custom-budget-zone">
-                <h4 style="margin: 0 0 5px 0; color: #2b6cb0;">🧩 2. 建立自訂小項預算群組</h4>
+                <h4 style="margin: 0 0 4px 0; color: #2b6cb0; font-size:13px;">🧩 2. 建立自訂小項預算群組</h4>
                 <div class="form-group">
                     <label style="font-size:11px; color:#4a5568;">群組名稱（如：日常餐飲、育兒開銷）</label>
-                    <input type="text" id="customGroupName" placeholder="請輸入群組自訂名稱" style="padding:5px; font-size:12px; margin-bottom:5px;">
+                    <input type="text" id="customGroupName" placeholder="請輸入群組自訂名稱" style="padding:4px; font-size:12px; margin-bottom:4px; height:28px;">
                 </div>
                 <div class="form-group">
-                    <label style="font-size:11px; color:#4a5568;">挑選內含小項 (可多選)</label>
-                    <select id="customGroupSubCats" multiple style="height: 100px; font-size: 11px; padding:4px;" class="form-group"></select>
+                    <label style="font-size:11px; color:#4a5568;">挑選內含小項 (可按住 Ctrl 鍵多選)</label>
+                    <select id="customGroupSubCats" multiple style="height: 80px; font-size: 11px; padding:4px;" class="form-group"></select>
                 </div>
                 <div class="form-group">
                     <label style="font-size:11px; color:#4a5568;">設定此群組每月預算上限</label>
-                    <div style="display: flex; gap: 5px;">
-                        <input type="number" id="customGroupAmount" placeholder="預算金額" style="padding:5px; font-size:12px;">
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" id="customGroupAmount" placeholder="預算金額" style="padding:4px; font-size:12px; height:28px;">
                         <button class="btn-save" style="background-color:#3182ce;" onclick="saveCustomGroupBudget()">建立控管</button>
                     </div>
                 </div>
             </div>
             
-            <h4 style="margin: 15px 0 8px 0; color:#4a5568;">📋 雙軌實時預算進度</h4>
+            <h4 style="margin: 12px 0 6px 0; color:#4a5568; font-size:13px;">📋 雙軌實時預算進度</h4>
             
             <div class="budget-summary-box" id="budgetSummaryBox">
                 <div class="budget-summary-row header">
-                    <span class="budget-summary-title" style="color:#718096; font-size:11px;">範疇</span>
+                    <span class="budget-summary-title" style="color:#718096; font-size:10px;">範疇</span>
                     <span class="budget-summary-label">總預算</span>
                     <span class="budget-summary-label">已花費</span>
                     <span class="budget-summary-label">結算剩餘</span>
@@ -414,14 +438,14 @@
                 <div class="budget-summary-row">
                     <span class="budget-summary-title">🌙 當月總計</span>
                     <span class="budget-summary-val" id="sumTotalBudget">$0</span>
-                    <span class="budget-summary-val" id="sumTotalSpent" style="color: #e74c3c;">$0</span>
-                    <span class="budget-summary-val" id="sumTotalRemaining" style="color: #2ecc71;">$0</span>
+                    <span class="budget-summary-val" id="sumTotalSpent" style="color: var(--danger-color);">$0</span>
+                    <span class="budget-summary-val" id="sumTotalRemaining" style="color: var(--success-color);">$0</span>
                 </div>
-                <div class="budget-summary-row" style="border-top: 1px dashed #e2e8f0; padding-top: 4px;">
+                <div class="budget-summary-row" style="border-top: 1px dashed var(--border-color); padding-top: 2px;">
                     <span class="budget-summary-title">🗓️ 年度總計</span>
                     <span class="budget-summary-val" id="yearTotalBudget">$0</span>
-                    <span class="budget-summary-val" id="yearTotalSpent" style="color: #e74c3c;">$0</span>
-                    <span class="budget-summary-val" id="yearTotalRemaining" style="color: #2ecc71;">$0</span>
+                    <span class="budget-summary-val" id="yearTotalSpent" style="color: var(--danger-color);">$0</span>
+                    <span class="budget-summary-val" id="yearTotalRemaining" style="color: var(--success-color);">$0</span>
                 </div>
             </div>
 
@@ -489,7 +513,7 @@
     fetchCloudData();
 
     function fetchCloudData() {
-        setCloudStatus("正在與 Google 雲端通訊中...", true);
+        setCloudStatus("連線中...", true);
         document.getElementById('lockStatusText').innerText = "下載中... 正在自雲端試算表安全獲取您的核心帳本...";
         
         fetch(CLOUD_API_URL)
@@ -517,19 +541,19 @@
 
                 // 存入本地僅供斷網防禦讀取
                 saveToLocal();
-                setCloudStatus("☁️ 雲端同步完成，目前顯示最新即時數據", false);
+                setCloudStatus("雲端已同步", false);
                 
                 // 🔓 解鎖畫面
                 document.getElementById('cloudLoadingLock').style.display = 'none';
                 updateUI();
             } else {
-                setCloudStatus("❌ 雲端主機異常，解鎖離線緊急唯讀模式", false);
+                setCloudStatus("❌ 雲端異常", false);
                 loadFromLocalFallback();
             }
         })
         .catch(err => {
             console.error(err);
-            setCloudStatus("⚠️ 連線失敗！已啟用本地快取保護機制", false);
+            setCloudStatus("⚠️ 離線防禦模式", false);
             loadFromLocalFallback();
         });
     }
@@ -544,7 +568,7 @@
     }
 
     function pushToCloud() {
-        setCloudStatus("⚡ 背景正在與雲端同步寫入中...", true);
+        setCloudStatus("同步中...", true);
         
         // 🌟 扁平化字串處理，安全穿透 GAS 寫入對應 Sheet
         const serializedCustomGroups = JSON.stringify(customGroupBudgets);
@@ -561,14 +585,14 @@
         .then(res => res.json())
         .then(resData => {
             if(resData.status === "success") { 
-                setCloudStatus("✨ 變更已成功安全寫入 Google 試算表", false); 
+                setCloudStatus("雲端已同步", false); 
             } else { 
-                setCloudStatus("❌ 雲端拒絕寫入，請檢查試算表架構", false); 
+                setCloudStatus("❌ 同步失敗", false); 
             }
         })
         .catch(err => { 
             console.error(err); 
-            setCloudStatus("⚠️ 網路不穩，變更已暫時鎖在本地快取", false); 
+            setCloudStatus("⚠️ 已鎖定快取", false); 
         });
     }
 
@@ -660,6 +684,21 @@
         else { wrapper.classList.add('collapsed'); btn.innerText = "📁 展開明細"; }
     }
 
+    // 新增：切換視覺圖表大面板的收合與展開
+    function toggleChartsCollapse() {
+        const wrapper = document.getElementById('chartsWrapper'), btn = document.getElementById('btnToggleCharts');
+        if(wrapper.classList.contains('collapsed')) { 
+            wrapper.classList.remove('collapsed'); 
+            btn.innerText = "📊 收合視覺圖表";
+            btn.style.backgroundColor = "#475569";
+            updateUI(); // 點開時重新繪製確保大小正確
+        } else { 
+            wrapper.classList.add('collapsed'); 
+            btn.innerText = "📊 開啟視覺圖表"; 
+            btn.style.backgroundColor = "var(--primary-color)";
+        }
+    }
+
     function handleTypeChange() {
         const type = document.getElementById('type').value, mainCatSelect = document.getElementById('mainCategory');
         const normalAccGroup = document.getElementById('normalAccountGroup'), transferGroup = document.getElementById('transferGroup');
@@ -708,7 +747,7 @@
         
         saveToLocal(); 
         updateUI();
-        pushToCloud(); // 觸發同步傳送上雲端
+        pushToCloud(); 
 
         document.getElementById('customGroupName').value = '';
         document.getElementById('customGroupAmount').value = '';
@@ -762,6 +801,7 @@
         if (confirm('確定要清空嗎？')) { records = []; saveToLocal(); updateUI(); pushToCloud(); } 
     }
 
+    // 🌟 修復重點：加入防空值機制 (item.note || '')，徹底修復 CSV 無法導出問題
     function exportToCSV() {
         let csvContent = "=== 系統帳戶初始設定配額 ===\n帳戶名稱,初始金額\n";
         accountNames.forEach(name => { csvContent += `${name},${accountBalances[name]}\n`; });
@@ -770,7 +810,11 @@
             let row = [item.date, item.type];
             if (item.type === '轉帳') { row.push("內部轉帳", "-", `從 [${item.fromAccount}] 轉到 [${item.toAccount}]`); } 
             else { row.push(item.mainCategory, item.type === '支出' ? item.subCategory : "-", item.account); }
-            row.push(item.amount, item.note.replace(/,/g, " ")); csvContent += row.join(",") + "\n";
+            
+            // 安全字串轉換，避免 item.note 為 undefined 時報錯
+            let safeNote = item.note ? String(item.note).replace(/,/g, " ") : "無備註";
+            row.push(item.amount, safeNote); 
+            csvContent += row.join(",") + "\n";
         });
         const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob), link = document.createElement("a");
@@ -892,7 +936,7 @@
                 }
             }
         });
-        document.getElementById('recordList').innerHTML = matchCount === 0 ? `<p style="text-align:center; color:#a0aec0; font-size:13px; padding:20px 0;">無符合條件紀錄 ☕</p>` : listHtml;
+        document.getElementById('recordList').innerHTML = matchCount === 0 ? `<p style="text-align:center; color:#a0aec0; font-size:12px; padding:15px 0;">無符合條件紀錄 ☕</p>` : listHtml;
         document.getElementById('totalIncome').innerText = totalIncome.toLocaleString(); document.getElementById('totalExpense').innerText = totalExpense.toLocaleString();
 
         let totalAssets = 0, totalLiabilities = 0;
@@ -944,10 +988,10 @@
                             <button class="btn-budget-delete" onclick="deleteCustomGroupBudget('${groupName}')">❌</button>
                         </div>
                     </div>
-                    <div class="budget-info" style="color: #4a5568; font-size: 11px; margin-bottom: 6px;"><span>包含小項: ${group.subCats ? group.subCats.join(', ') : ''}</span></div>
-                    <div class="budget-info" style="color: #718096; font-size: 11px;"><span>📊 <strong>當月</strong> 已花 $${currentSpent.toLocaleString()} / 預算 $${budgetLimit.toLocaleString()}</span></div>
+                    <div class="budget-info" style="color: #4a5568; font-size: 11px; margin-bottom: 4px;"><span>包含: ${group.subCats ? group.subCats.join(', ') : ''}</span></div>
+                    <div class="budget-info" style="color: #718096; font-size: 11px;"><span>當月 已花 $${currentSpent.toLocaleString()} / 預算 $${budgetLimit.toLocaleString()}</span></div>
                     <div class="progress-bar-bg"><div class="${isOver?'progress-bar-fill progress-over':'progress-bar-fill'}" style="width: ${percent}%;"></div></div>
-                    <div class="budget-info" style="color: #718096; font-size: 11px; margin-top: 6px;"><span>📅 <strong>年度</strong> 已花 $${currentYearSpent.toLocaleString()} / 預算 $${yearBudgetLimit.toLocaleString()}</span></div>
+                    <div class="budget-info" style="color: #718096; font-size: 11px; margin-top: 4px;"><span>年度 已花 $${currentYearSpent.toLocaleString()} / 預算 $${yearBudgetLimit.toLocaleString()}</span></div>
                     <div class="progress-bar-bg year-bg"><div class="progress-bar-fill year-fill ${isYearOver?'progress-over':''}" style="width: ${yearPercent}%;"></div></div>
                 </div>`);
         }
@@ -967,7 +1011,11 @@
             document.getElementById('budgetSummaryBox').style.display = 'none';
             budgetListSection.innerHTML = `<p style="color:#a0aec0; text-align:center; font-size:12px;">尚未設定任何預算控管項目 ☕</p>`;
         }
-        renderThreeSeparateCharts(startFilter, endFilter, expenseChartMap, incomeChartMap, dailyAssetTimeline);
+        
+        // 只有在圖表未收合的情況下才進行重繪，節省效能
+        if (!document.getElementById('chartsWrapper').classList.contains('collapsed')) {
+            renderThreeSeparateCharts(startFilter, endFilter, expenseChartMap, incomeChartMap, dailyAssetTimeline);
+        }
     }
 
     function renderThreeSeparateCharts(start, end, expenseDataMap, incomeDataMap, dailyAssetTimeline) {
@@ -978,14 +1026,14 @@
         if (pieChartInstance) pieChartInstance.destroy();
         pieChartInstance = new Chart(document.getElementById('expensePieChart').getContext('2d'), {
             type: 'doughnut', data: { labels: expenseLabels, datasets: [{ data: expenseValues, backgroundColor: ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#1abc9c','#e67e22','#34495e','#95a5a6','#d35400','#c0392b','#7f8c8d'] }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } },
             plugins: [{
                 id: 'centerTextPlugin',
                 beforeDraw: function(chart) {
-                    const ctx = chart.ctx; ctx.restore(); ctx.font = "bold 13px sans-serif"; ctx.fillStyle = "#718096"; ctx.textBaseline = "middle";
-                    const text1 = "總支出", textX1 = Math.round((chart.chartArea.left + chart.chartArea.right) / 2 - ctx.measureText(text1).width / 2), textY1 = Math.round((chart.chartArea.top + chart.chartArea.bottom) / 2 - 12);
-                    ctx.fillText(text1, textX1, textY1); ctx.font = "bold 20px sans-serif"; ctx.fillStyle = "#e74c3c";
-                    const text2 = `$${totalExpenseInPeriod.toLocaleString()}`, textX2 = Math.round((chart.chartArea.left + chart.chartArea.right) / 2 - ctx.measureText(text2).width / 2), textY2 = Math.round((chart.chartArea.top + chart.chartArea.bottom) / 2 + 12);
+                    const ctx = chart.ctx; ctx.restore(); ctx.font = "bold 11px sans-serif"; ctx.fillStyle = "#718096"; ctx.textBaseline = "middle";
+                    const text1 = "總支出", textX1 = Math.round((chart.chartArea.left + chart.chartArea.right) / 2 - ctx.measureText(text1).width / 2), textY1 = Math.round((chart.chartArea.top + chart.chartArea.bottom) / 2 - 10);
+                    ctx.fillText(text1, textX1, textY1); ctx.font = "bold 16px sans-serif"; ctx.fillStyle = "#e74c3c";
+                    const text2 = `$${totalExpenseInPeriod.toLocaleString()}`, textX2 = Math.round((chart.chartArea.left + chart.chartArea.right) / 2 - ctx.measureText(text2).width / 2), textY2 = Math.round((chart.chartArea.top + chart.chartArea.bottom) / 2 + 10);
                     ctx.fillText(text2, textX2, textY2); ctx.save();
                 }
             }]
@@ -994,7 +1042,7 @@
         const incomeLabels = Object.keys(incomeDataMap).filter(k => incomeDataMap[k] > 0), incomeValues = incomeLabels.map(k => incomeDataMap[k]);
         if (barChartInstance) barChartInstance.destroy();
         barChartInstance = new Chart(document.getElementById('incomeBarChart').getContext('2d'), {
-            type: 'bar', data: { labels: incomeLabels, datasets: [{ label: '進帳 ($)', data: incomeValues, backgroundColor: '#2ecc71', borderRadius: 5 }] },
+            type: 'bar', data: { labels: incomeLabels, datasets: [{ label: '進帳 ($)', data: incomeValues, backgroundColor: '#2ecc71', borderRadius: 4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
 
@@ -1007,7 +1055,7 @@
         const lineLabels = Object.keys(timelineMap).sort(), lineValues = lineLabels.map(d => timelineMap[d]);
         if (lineChartInstance) lineChartInstance.destroy();
         lineChartInstance = new Chart(document.getElementById('assetLineChart').getContext('2d'), {
-            type: 'line', data: { labels: lineLabels, datasets: [{ label: '資產淨值 ($)', data: lineValues, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.08)', tension: 0.1, fill: true, borderWidth: 3 }] },
+            type: 'line', data: { labels: lineLabels, datasets: [{ label: '資產淨值 ($)', data: lineValues, borderColor: '#3498db', backgroundColor: 'rgba(52,152,219,0.04)', tension: 0.1, fill: true, borderWidth: 2 }] },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
