@@ -155,6 +155,9 @@
         .control-item label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
         .control-item select, .control-item input { padding: 4px 6px; font-size: 12px; border-radius: 4px; }
         
+        /* 檢索區塊樣式增強 */
+        .search-badge-info { font-size: 11px; color: var(--primary-color); background: #e6fffa; border: 1px solid #b2f5ea; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: auto; display: none; }
+        
         .btn-toggle-view { background-color: #475569; font-size: 11px; padding: 3px 6px; display: flex; align-items: center; gap: 2px; }
         .btn-toggle-view:hover { background-color: #334155; }
         .history-list-wrapper { display: block; max-height: 400px; overflow-y: auto; padding-right: 4px; }
@@ -331,12 +334,14 @@
 
         <div class="history">
             <div class="history-header">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <h3 style="margin-bottom: 0;">歷史明細</h3>
+                <div style="display:flex; align-items:center; gap:8px; width: 100%;">
+                    <h3 style="margin-bottom: 0; white-space: nowrap;">歷史明細</h3>
+                    <span id="searchBadgeInfo" class="search-badge-info">🔍 全時間精準檢索中</span>
                     <button class="btn-toggle-view" id="btnToggleCollapse" onclick="toggleHistoryCollapse()">📂 收合明細</button>
                 </div>
                 <button class="btn-clear" onclick="clearAllRecords()">清空明細</button>
             </div>
+            
             <div class="history-controls">
                 <div class="control-row">
                     <div class="control-item" style="flex: 0.5; min-width: 90px;">
@@ -370,7 +375,17 @@
                         </select>
                     </div>
                 </div>
+                
+                <div class="control-row" style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 2px;">
+                    <div class="control-item" style="flex: 1;">
+                        <label style="color: var(--primary-color); font-weight: 700;">🔍 關鍵字搜尋（自動跨越時間限制，全面精準尋找 備註 或 小項）</label>
+                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                            <input type="text" id="globalSearchKeyword" placeholder="輸入你想搜尋的明細關鍵字（如：八方、早餐...）" oninput="updateUI()" style="padding: 6px 10px; font-size: 13px; height: 30px;">
+                        </div>
+                    </div>
+                </div>
             </div>
+            
             <div class="history-list-wrapper" id="historyListWrapper">
                 <div id="recordList"></div>
             </div>
@@ -878,6 +893,10 @@
         const filterStartDay = parseLocalDate(document.getElementById('filterStartDate').value);
         const filterEndDay = parseLocalDate(document.getElementById('filterEndDate').value);
         const filterTargetCategory = document.getElementById('filterCategorySelect').value;
+        
+        // 獲取檢索輸入值 (轉小寫處理以進行不區分大小寫的盲搜)
+        const searchKeyword = document.getElementById('globalSearchKeyword').value.trim().toLowerCase();
+        const searchBadge = document.getElementById('searchBadgeInfo');
 
         chronologicalRecords.forEach(item => {
             if (item.type === '轉帳') {
@@ -923,10 +942,30 @@
 
         let listHtml = '', matchCount = 0;
         records.forEach(item => {
-            let passTime = filterTimeMode === 'month' ? (item.date.substring(0, 7) === filterMonthStr) : (parseLocalDate(item.date) >= filterStartDay && parseLocalDate(item.date) <= filterEndDay);
-            let passCategory = filterTargetCategory === 'ALL' ? true : (filterTargetCategory === '內部轉帳' ? item.type === '轉帳' : (item.type !== '轉帳' && item.mainCategory === filterTargetCategory));
+            let passRecord = false;
 
-            if (passTime && passCategory) {
+            // 🌟 邏輯分流：如果有輸入檢索字，啟動「全時間段盲搜機制」，直接覆蓋上方的時間與大項分類設定
+            if (searchKeyword !== "") {
+                searchBadge.style.display = 'inline-block';
+                
+                let safeNote = item.note ? String(item.note).toLowerCase() : "";
+                let safeSubCat = item.subCategory ? String(item.subCategory).toLowerCase() : "";
+                
+                // 檢查 備註 或 支出小項 是否包含關鍵字
+                if (safeNote.includes(searchKeyword) || safeSubCat.includes(searchKeyword)) {
+                    passRecord = true;
+                }
+            } else {
+                // 如果沒有輸入檢索字，回歸本來的月份/自訂天數、分類篩選邏輯
+                searchBadge.style.display = 'none';
+                let passTime = filterTimeMode === 'month' ? (item.date.substring(0, 7) === filterMonthStr) : (parseLocalDate(item.date) >= filterStartDay && parseLocalDate(item.date) <= filterEndDay);
+                let passCategory = filterTargetCategory === 'ALL' ? true : (filterTargetCategory === '內部轉帳' ? item.type === '轉帳' : (item.type !== '轉帳' && item.mainCategory === filterTargetCategory));
+                if (passTime && passCategory) {
+                    passRecord = true;
+                }
+            }
+
+            if (passRecord) {
                 matchCount++;
                 if (item.type === '轉帳') {
                     listHtml += `<div class="history-item"><div class="item-left transfer-border"><div class="item-date">${item.date}</div><div class="item-title"><span class="item-acc-tag" style="background:#9b59b6; color:white;">轉帳 🔄</span>從 <strong>${item.fromAccount}</strong> ➡️ <strong>${item.toAccount}</strong></div><div class="item-note">${item.note}</div></div><div class="item-right"><div class="item-amount" style="color: #9b59b6;">$${item.amount}</div><button class="btn-delete" onclick="deleteRecord(${item.id})">❌</button></div></div>`;
