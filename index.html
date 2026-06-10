@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的智慧帳本 v13.2 雲端修正版</title>
+    <title>我的智慧帳本 v13.3 雲端修正版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -79,6 +79,7 @@
         h2 { font-size: 22px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
         h3 { font-size: 16px; border-left: 4px solid var(--primary-color); padding-left: 8px; margin-bottom: 12px; }
         
+        /* 雲端狀態燈 */
         .cloud-status-bar {
             background-color: #e8f4fd;
             border: 1px solid #bee3f8;
@@ -154,8 +155,6 @@
         .control-item label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
         .control-item select, .control-item input { padding: 4px 6px; font-size: 12px; border-radius: 4px; }
         
-        .search-badge-info { font-size: 11px; color: var(--primary-color); background: #e6fffa; border: 1px solid #b2f5ea; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: auto; display: none; }
-        
         .btn-toggle-view { background-color: #475569; font-size: 11px; padding: 3px 6px; display: flex; align-items: center; gap: 2px; }
         .btn-toggle-view:hover { background-color: #334155; }
         .history-list-wrapper { display: block; max-height: 400px; overflow-y: auto; padding-right: 4px; }
@@ -201,7 +200,7 @@
 
         .backup-zone { background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px; }
 
-        /* 圖表面板 */
+        /* 圖表 */
         .analysis-section { background-color: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid var(--border-color); margin-top: 16px; }
         .charts-wrapper { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
         .charts-wrapper.collapsed { display: none; }
@@ -209,6 +208,7 @@
         .chart-box-standalone h4 { margin: 0 0 6px 0; color: #475569; font-size: 12px; text-align: center; }
 
         .custom-budget-zone { background: #f0f7ff; padding: 10px; border-radius: 6px; border: 1px solid #bee3f8; margin-top: 10px; }
+        .custom-budget-item { border-left: 3px solid #3182ce; background: #fff; }
     </style>
 </head>
 <body>
@@ -221,7 +221,7 @@
 <div class="main-layout">
     <div class="container">
         <h2>
-            <span>我的智慧帳本 v13.2 雲端修正版 ☁️</span>
+            <span>我的智慧帳本 v13.3 雲端修正版 ☁️</span>
             <div class="cloud-status-bar" id="cloudStatusBar" style="margin-bottom:0; padding:4px 8px; font-size:11px;">
                 <span id="cloudStatusText">正在連接雲端...</span>&nbsp;
                 <div class="sync-loading-spinner" id="cloudStatusSpinner"></div>
@@ -300,7 +300,7 @@
         <div class="analysis-section">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin-bottom: 0;">🎛️ 視覺圖表分析大面板</h3>
-                <button class="btn-toggle-view" id="btnToggleCharts" style="background-color: var(--primary-color);" onclick="toggleChartsCollapse()">📊 開啟視覺圖表</button>
+                <button class="btn-toggle-view" id="btnToggleCharts" style="background-color: var(--primary-color);" onclick="toggleChartsCollapse()">📊 開氣視覺圖表</button>
             </div>
             
             <div class="charts-wrapper collapsed" id="chartsWrapper">
@@ -331,14 +331,12 @@
 
         <div class="history">
             <div class="history-header">
-                <div style="display:flex; align-items:center; gap:8px; width: 100%;">
-                    <h3 style="margin-bottom: 0; white-space: nowrap;">歷史明細</h3>
-                    <span id="searchBadgeInfo" class="search-badge-info">🔍 全時間精準檢索中</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <h3 style="margin-bottom: 0;">歷史明細</h3>
                     <button class="btn-toggle-view" id="btnToggleCollapse" onclick="toggleHistoryCollapse()">📂 收合明細</button>
                 </div>
                 <button class="btn-clear" onclick="clearAllRecords()">清空明細</button>
             </div>
-            
             <div class="history-controls">
                 <div class="control-row">
                     <div class="control-item" style="flex: 0.5; min-width: 90px;">
@@ -372,17 +370,7 @@
                         </select>
                     </div>
                 </div>
-                
-                <div class="control-row" style="border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 2px;">
-                    <div class="control-item" style="flex: 1;">
-                        <label style="color: var(--primary-color); font-weight: 700;">🔍 關鍵字搜尋（自動跨越時間限制）</label>
-                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
-                            <input type="text" id="globalSearchKeyword" placeholder="輸入你想搜尋的明細關鍵字" oninput="updateUI()" style="padding: 6px 10px; font-size: 13px; height: 30px;">
-                        </div>
-                    </div>
-                </div>
             </div>
-            
             <div class="history-list-wrapper" id="historyListWrapper">
                 <div id="recordList"></div>
             </div>
@@ -422,7 +410,7 @@
             <div class="custom-budget-zone">
                 <h4 style="margin: 0 0 4px 0; color: #2b6cb0; font-size:13px;">🧩 2. 建立自訂小項預算群組</h4>
                 <div class="form-group">
-                    <label style="font-size:11px; color:#4a5568;">群組名稱（如：日常餐飲）</label>
+                    <label style="font-size:11px; color:#4a5568;">群組名稱（如：日常餐飲、育兒開銷）</label>
                     <input type="text" id="customGroupName" placeholder="請輸入群組自訂名稱" style="padding:4px; font-size:12px; margin-bottom:4px; height:28px;">
                 </div>
                 <div class="form-group">
@@ -453,7 +441,7 @@
                     <span class="budget-summary-val" id="sumTotalSpent" style="color: var(--danger-color);">$0</span>
                     <span class="budget-summary-val" id="sumTotalRemaining" style="color: var(--success-color);">$0</span>
                 </div>
-                <div class="budget-summary-row" style="border-top: 1px solid var(--border-color); padding-top: 2px;">
+                <div class="budget-summary-row" style="border-top: 1px dashed var(--border-color); padding-top: 2px;">
                     <span class="budget-summary-title">🗓️ 年度總計</span>
                     <span class="budget-summary-val" id="yearTotalBudget">$0</span>
                     <span class="budget-summary-val" id="yearTotalSpent" style="color: var(--danger-color);">$0</span>
@@ -495,45 +483,19 @@
     let pieChartInstance = null, barChartInstance = null, lineChartInstance = null;
     function isCreditCard(accName) { return accName.includes('信用卡'); }
 
-    // 🌟【完美解析方案】：不再依賴 JS 的 Date 物件轉來轉去，一律清洗成純文字 YYYY-MM-DD
+    // 核心時間解析：乾淨單純處理 YYYY-MM-DD
     function parseLocalDate(dateStr) {
         if (!dateStr) return new Date();
-        
-        let targetStr = String(dateStr).trim();
-        
-        // 處理包含 T 或 Z 的 ISO 字串
-        if (targetStr.includes('T') || targetStr.includes('Z')) {
-            targetStr = targetStr.split('T')[0];
+        const parts = dateStr.split('-');
+        if (parts.length === 2) {
+            return new Date(Number(parts[0]), Number(parts[1]) - 1, 1, 0, 0, 0);
         }
-        
-        // 處理類似 Tue Jun 02 2026 這種英文格式
-        if (targetStr.includes('(') || targetStr.match(/[A-Za-z]/)) {
-            const d = new Date(targetStr);
-            if (!isNaN(d.getTime())) {
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                targetStr = `${y}-${m}-${day}`;
-            }
-        }
-
-        const parts = targetStr.split('-');
-        if (parts.length === 3) {
-            return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 0, 0, 0, 0);
-        }
-        
-        const finalCheck = new Date(dateStr);
-        return isNaN(finalCheck.getTime()) ? new Date() : finalCheck;
+        if (parts.length !== 3) return new Date(dateStr);
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 0, 0, 0);
     }
 
-    function formatToLocalDateString(dateObj) {
-        const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const d = String(dateObj.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-
-    const today = new Date(), todayStr = formatToLocalDateString(today);
+    // 初始化日期
+    const today = new Date(), todayStr = today.toISOString().split('T')[0];
     document.getElementById('recordDate').value = todayStr;
     const currentYear = today.getFullYear(), currentMonthStr = String(today.getMonth() + 1).padStart(2, '0');
     document.getElementById('analysisStartDate').value = `${currentYear}-${currentMonthStr}-01`;
@@ -541,6 +503,7 @@
     document.getElementById('filterStartDate').value = `${currentYear}-${currentMonthStr}-01`;
     document.getElementById('filterEndDate').value = todayStr;
 
+    // 基本介面渲染
     initAccountUI();
     initSelectOptions();
     initBudgetMonthSelect();
@@ -548,6 +511,7 @@
     initCustomGroupSubCatsOptions(); 
     handleTypeChange();
 
+    // 強制向雲端抓取主母本
     fetchCloudData();
 
     function fetchCloudData() {
@@ -562,14 +526,7 @@
                 
                 if(cloud.accounts && Object.keys(cloud.accounts).length > 0) accountBalances = cloud.accounts;
                 if(cloud.records) {
-                    records = cloud.records.filter(r => r && r.date).map(r => {
-                        try {
-                            r.date = formatToLocalDateString(parseLocalDate(r.date));
-                        } catch(e) {
-                            r.date = todayStr;
-                        }
-                        return r;
-                    });
+                    records = cloud.records;
                     records.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
                 }
                 if (cloud.budgets) budgets = cloud.budgets;
@@ -577,14 +534,13 @@
                 if (cloud.customGroupBudgets) {
                     let remoteCustom = cloud.customGroupBudgets;
                     if (typeof remoteCustom === 'string' && remoteCustom.trim().startsWith('{')) {
-                        try { remoteCustom = JSON.parse(remoteCustom); } catch(e) { console.error(e); }
+                        try { remoteCustom = JSON.parse(remoteCustom); } catch(e) { console.error("解析錯誤", e); }
                     }
                     customGroupBudgets = Object.keys(remoteCustom).length > 0 ? remoteCustom : {};
                 }
 
                 saveToLocal();
                 setCloudStatus("雲端已同步", false);
-                
                 document.getElementById('cloudLoadingLock').style.display = 'none';
                 updateUI();
             } else {
@@ -601,10 +557,6 @@
 
     function loadFromLocalFallback() {
         records = JSON.parse(localStorage.getItem('smart_ledger_records')) || [];
-        records = records.map(r => {
-            r.date = formatToLocalDateString(parseLocalDate(r.date));
-            return r;
-        });
         budgets = JSON.parse(localStorage.getItem('smart_ledger_budgets')) || {}; 
         customGroupBudgets = JSON.parse(localStorage.getItem('smart_ledger_custom_budgets')) || {}; 
         accountBalances = JSON.parse(localStorage.getItem('smart_ledger_accounts')) || accountBalances;
@@ -615,26 +567,28 @@
     function pushToCloud() {
         setCloudStatus("同步中...", true);
         const serializedCustomGroups = JSON.stringify(customGroupBudgets);
-        const cleanedRecords = records.map(r => {
-            r.date = formatToLocalDateString(parseLocalDate(r.date));
-            return r;
-        });
 
         const payload = {
             action: "syncAll",
             accounts: Object.keys(accountBalances).map(k => [k, accountBalances[k]]),
             budgets: Object.keys(budgets).map(k => [k, budgets[k]]),
             customGroupBudgets: serializedCustomGroups,
-            records: cleanedRecords
+            records: records
         };
         
         fetch(CLOUD_API_URL, { method: "POST", body: JSON.stringify(payload) })
         .then(res => res.json())
         .then(resData => {
-            if(resData.status === "success") { setCloudStatus("雲端已同步", false); } 
-            else { setCloudStatus("❌ 同步失敗", false); }
+            if(resData.status === "success") { 
+                setCloudStatus("雲端已同步", false); 
+            } else { 
+                setCloudStatus("❌ 同步失敗", false); 
+            }
         })
-        .catch(err => { console.error(err); setCloudStatus("⚠️ 已鎖定快取", false); });
+        .catch(err => { 
+            console.error(err); 
+            setCloudStatus("⚠️ 已鎖定快取", false); 
+        });
     }
 
     function saveToLocal() {
@@ -709,7 +663,7 @@
         filterCatSelect.appendChild(expOptGroup);
         const incOptGroup = document.createElement('optgroup'); incOptGroup.label = "💰 收入管道";
         incomeCategories.forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.innerText = cat; incOptGroup.appendChild(opt); });
-        let transOpt = document.createElement('option'); transOpt.value = "內部轉帳"; transOpt.innerText = "🔄 內部轉帳"; filterCatSelect.appendChild(transOpt);
+        const transOpt = document.createElement('option'); transOpt.value = "內部轉帳"; transOpt.innerText = "🔄 內部轉帳"; filterCatSelect.appendChild(transOpt);
     }
 
     function handleTimeModeChange() {
@@ -779,10 +733,16 @@
         const amt = parseInt(document.getElementById('customGroupAmount').value);
         const selectedSubCats = Array.from(document.getElementById('customGroupSubCats').selectedOptions).map(opt => opt.value);
 
-        if (!name || isNaN(amt) || amt < 0 || selectedSubCats.length === 0) { alert('請完整填寫項目！'); return; }
+        if (!name) { alert('請填寫群組名稱！'); return; }
+        if (isNaN(amt) || amt < 0) { alert('請輸入金額！'); return; }
+        if (selectedSubCats.length === 0) { alert('請至少選一個細項！'); return; }
+
         customGroupBudgets[name] = { limit: amt, subCats: selectedSubCats };
-        saveToLocal(); updateUI(); pushToCloud();
-        document.getElementById('customGroupName').value = ''; document.getElementById('customGroupAmount').value = ''; document.getElementById('customGroupSubCats').selectedIndex = -1;
+        saveToLocal(); updateUI(); pushToCloud(); 
+
+        document.getElementById('customGroupName').value = '';
+        document.getElementById('customGroupAmount').value = '';
+        document.getElementById('customGroupSubCats').selectedIndex = -1;
     }
 
     function editBudgetAmount(cat, oldAmt) {
@@ -810,8 +770,7 @@
         const note = document.getElementById('note').value, chosenDate = document.getElementById('recordDate').value;
         if (!chosenDate || isNaN(amount) || amount <= 0) { alert('請輸入日期與金額！'); return; }
 
-        const cleanSavedDate = formatToLocalDateString(parseLocalDate(chosenDate));
-        let newRecord = { id: Date.now(), type: type, amount: amount, note: note ? note : '無備註', date: cleanSavedDate };
+        let newRecord = { id: Date.now(), type: type, amount: amount, note: note ? note : '無備註', date: chosenDate };
         if (type === '轉帳') {
             const fromAcc = document.getElementById('fromAccountSelect').value, toAcc = document.getElementById('toAccountSelect').value;
             if (fromAcc === toAcc) { alert('帳戶不能相同！'); return; }
@@ -842,7 +801,8 @@
             if (item.type === '轉帳') { row.push("內部轉帳", "-", `從 [${item.fromAccount}] 轉到 [${item.toAccount}]`); } 
             else { row.push(item.mainCategory, item.type === '支出' ? item.subCategory : "-", item.account); }
             let safeNote = item.note ? String(item.note).replace(/,/g, " ") : "無備註";
-            row.push(item.amount, safeNote); csvContent += row.join(",") + "\n";
+            row.push(item.amount, safeNote); 
+            csvContent += row.join(",") + "\n";
         });
         const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob), link = document.createElement("a");
@@ -865,7 +825,7 @@
                         let parts = line.split(","); if (parts.length === 2 && accountNames.includes(parts[0].trim())) parsedBalances[parts[0].trim()] = parseInt(parts[1].trim()) || 0;
                     } else {
                         let cols = line.split(","); if (cols.length < 6) continue;
-                        let item = { id: Date.now() + i, date: formatToLocalDateString(parseLocalDate(cols[0].trim())), type: cols[1].trim(), amount: parseInt(cols[5].trim()) || 0, note: cols[6]?cols[6].trim():"無備註" };
+                        let item = { id: Date.now() + i, date: cols[0].trim(), type: cols[1].trim(), amount: parseInt(cols[5].trim()) || 0, note: cols[6]?cols[6].trim():"無備註" };
                         if (item.type === '轉帳') {
                             let match = cols[4].trim().match(/從 \[(.*?)\] 轉到 \[(.*?)\]/); if (match) { item.fromAccount = match[1]; item.toAccount = match[2]; }
                         } else { item.mainCategory = cols[2].trim(); item.subCategory = cols[3].trim() === '-' ? '' : cols[3].trim(); item.account = cols[4].trim(); }
@@ -884,8 +844,12 @@
     function updateUI() {
         let currentBalances = JSON.parse(JSON.stringify(accountBalances));
         let totalIncome = 0, totalExpense = 0;
-        const selectedBudgetMonth = document.getElementById('budgetMonthSelect').value;
-        const [bYear, bMonth] = selectedBudgetMonth.split('-').map(Number);
+
+        // 獲取當前被選取的預算月份基準字串 (例如："2026-06")
+        const selectedBudgetMonthStr = document.getElementById('budgetMonthSelect').value; 
+        const budgetTargetDate = parseLocalDate(selectedBudgetMonthStr); 
+        const bYear = budgetTargetDate.getFullYear();
+        const bMonth = budgetTargetDate.getMonth() + 1;
 
         let expenseChartMap = {}; Object.keys(expenseData).forEach(c => expenseChartMap[c] = 0);
         let incomeChartMap = {}; incomeCategories.forEach(c => incomeChartMap[c] = 0);
@@ -899,22 +863,16 @@
         let chronologicalRecords = [...records].reverse();
         let dailyAssetTimeline = {};
         
-        const startFilterStr = document.getElementById('analysisStartDate').value;
-        const endFilterStr = document.getElementById('analysisEndDate').value;
+        const startFilter = parseLocalDate(document.getElementById('analysisStartDate').value);
+        const endFilter = parseLocalDate(document.getElementById('analysisEndDate').value);
         
-        const filterTimeMode = document.getElementById('filterTimeMode').value, filterMonthStr = document.getElementById('filterMonthSelect').value;
-        const filterStartStr = document.getElementById('filterStartDate').value;
-        const filterEndStr = document.getElementById('filterEndDate').value;
+        const filterTimeMode = document.getElementById('filterTimeMode').value;
+        const filterMonthStr = document.getElementById('filterMonthSelect').value; // 格式 "YYYY-MM"
+        const filterStartDay = parseLocalDate(document.getElementById('filterStartDate').value);
+        const filterEndDay = parseLocalDate(document.getElementById('filterEndDate').value);
         const filterTargetCategory = document.getElementById('filterCategorySelect').value;
-        
-        const searchKeyword = document.getElementById('globalSearchKeyword').value.trim().toLowerCase();
-        const searchBadge = document.getElementById('searchBadgeInfo');
 
         chronologicalRecords.forEach(item => {
-            let itemCleanStr = item.date;
-            let parts = itemCleanStr.split('-');
-            let rYear = Number(parts[0]), rMonth = Number(parts[1]);
-
             if (item.type === '轉帳') {
                 currentBalances[item.fromAccount] -= item.amount;
                 if (isCreditCard(item.toAccount)) { currentBalances[item.toAccount] -= item.amount; } 
@@ -922,66 +880,54 @@
             } else {
                 if (item.type === '收入') {
                     totalIncome += item.amount; currentBalances[item.account] += item.amount;
-                    if (itemCleanStr >= startFilterStr && itemCleanStr <= endFilterStr) { if(incomeChartMap[item.mainCategory] !== undefined) incomeChartMap[item.mainCategory] += item.amount; }
+                    let iDate = parseLocalDate(item.date);
+                    if (iDate >= startFilter && iDate <= endFilter) { if(incomeChartMap[item.mainCategory] !== undefined) incomeChartMap[item.mainCategory] += item.amount; }
                 } else {
                     totalExpense += item.amount;
                     if (isCreditCard(item.account)) { currentBalances[item.account] += item.amount; } 
                     else { currentBalances[item.account] -= item.amount; }
 
-                    if (rYear === bYear && rMonth === bMonth) {
-                        if (monthBudgetSpentMap[item.mainCategory] !== undefined) monthBudgetSpentMap[item.mainCategory] += item.amount;
-                        Object.keys(customGroupBudgets).forEach(gName => {
-                            if (customGroupBudgets[gName].subCats && customGroupBudgets[gName].subCats.includes(item.subCategory)) customGroupSpentMap[gName] += item.amount;
-                        });
+                    if (item.date && item.date.length >= 7) {
+                        let rYear = parseInt(item.date.substring(0, 4));
+                        let rMonth = parseInt(item.date.substring(5, 7));
+                        let rYearMonthStr = item.date.substring(0, 7);
+                        
+                        // 當月支出
+                        if (rYearMonthStr === selectedBudgetMonthStr) {
+                            if (monthBudgetSpentMap[item.mainCategory] !== undefined) monthBudgetSpentMap[item.mainCategory] += item.amount;
+                            Object.keys(customGroupBudgets).forEach(gName => {
+                                if (customGroupBudgets[gName].subCats && customGroupBudgets[gName].subCats.includes(item.subCategory)) customGroupSpentMap[gName] += item.amount;
+                            });
+                        }
+                        // 年度累計支出 (至目前選擇月份為止)
+                        if (rYear === bYear && rMonth <= bMonth) {
+                            if (yearBudgetSpentMap[item.mainCategory] !== undefined) yearBudgetSpentMap[item.mainCategory] += item.amount;
+                            Object.keys(customGroupBudgets).forEach(gName => {
+                                if (customGroupBudgets[gName].subCats && customGroupBudgets[gName].subCats.includes(item.subCategory)) customGroupYearSpentMap[gName] += item.amount;
+                            });
+                        }
                     }
-                    if (rYear === bYear && rMonth <= bMonth) {
-                        if (yearBudgetSpentMap[item.mainCategory] !== undefined) yearBudgetSpentMap[item.mainCategory] += item.amount;
-                        Object.keys(customGroupBudgets).forEach(gName => {
-                            if (customGroupBudgets[gName].subCats && customGroupBudgets[gName].subCats.includes(item.subCategory)) customGroupYearSpentMap[gName] += item.amount;
-                        });
-                    }
-                    if (itemCleanStr >= startFilterStr && itemCleanStr <= endFilterStr) { if(expenseChartMap[item.mainCategory] !== undefined) expenseChartMap[item.mainCategory] += item.amount; }
+                    let iDate = parseLocalDate(item.date);
+                    if (iDate >= startFilter && iDate <= endFilter) { if(expenseChartMap[item.mainCategory] !== undefined) expenseChartMap[item.mainCategory] += item.amount; }
                 }
             }
-            dailyAssetTimeline[itemCleanStr] = totalAssetsCalculation(currentBalances);
-        });
-
-        function totalAssetsCalculation(balances) {
             let tAssets = 0, tLiabilities = 0;
-            accountNames.forEach(name => { if (isCreditCard(name)) tLiabilities += balances[name]; else tAssets += balances[name]; });
-            return tAssets - tLiabilities;
-        }
+            accountNames.forEach(name => { if (isCreditCard(name)) tLiabilities += currentBalances[name]; else tAssets += currentBalances[name]; });
+            dailyAssetTimeline[item.date] = tAssets - tLiabilities;
+        });
 
         let listHtml = '', matchCount = 0;
         records.forEach(item => {
-            let passRecord = false;
-            let itemCleanStr = item.date;
+            let passTime = filterTimeMode === 'month' ? (item.date.substring(0, 7) === filterMonthStr) : (parseLocalDate(item.date) >= filterStartDay && parseLocalDate(item.date) <= filterEndDay);
+            let passCategory = filterTargetCategory === 'ALL' ? true : (filterTargetCategory === '內部轉帳' ? item.type === '轉帳' : (item.type !== '轉帳' && item.mainCategory === filterTargetCategory));
 
-            if (searchKeyword !== "") {
-                searchBadge.style.display = 'inline-block';
-                let safeNote = item.note ? String(item.note).toLowerCase() : "";
-                let safeSubCat = item.subCategory ? String(item.subCategory).toLowerCase() : "";
-                if (safeNote.includes(searchKeyword) || safeSubCat.includes(searchKeyword)) passRecord = true;
-            } else {
-                searchBadge.style.display = 'none';
-                let passTime = false;
-                if (filterTimeMode === 'month') {
-                    passTime = (itemCleanStr.substring(0, 7) === filterMonthStr);
-                } else {
-                    passTime = (itemCleanStr >= filterStartStr && itemCleanStr <= filterEndStr);
-                }
-                
-                let passCategory = filterTargetCategory === 'ALL' ? true : (filterTargetCategory === '內部轉帳' ? item.type === '轉帳' : (item.type !== '轉帳' && item.mainCategory === filterTargetCategory));
-                if (passTime && passCategory) passRecord = true;
-            }
-
-            if (passRecord) {
+            if (passTime && passCategory) {
                 matchCount++;
                 if (item.type === '轉帳') {
-                    listHtml += `<div class="history-item"><div class="item-left transfer-border"><div class="item-date">${itemCleanStr}</div><div class="item-title"><span class="item-acc-tag" style="background:#9b59b6; color:white;">轉帳 🔄</span>從 <strong>${item.fromAccount}</strong> ➡️ <strong>${item.toAccount}</strong></div><div class="item-note">${item.note}</div></div><div class="item-right"><div class="item-amount" style="color: #9b59b6;">$${item.amount}</div><button class="btn-delete" onclick="deleteRecord(${item.id})">❌</button></div></div>`;
+                    listHtml += `<div class="history-item"><div class="item-left transfer-border"><div class="item-date">${item.date}</div><div class="item-title"><span class="item-acc-tag" style="background:#9b59b6; color:white;">轉帳 🔄</span>從 <strong>${item.fromAccount}</strong> ➡️ <strong>${item.toAccount}</strong></div><div class="item-note">${item.note}</div></div><div class="item-right"><div class="item-amount" style="color: #9b59b6;">$${item.amount}</div><button class="btn-delete" onclick="deleteRecord(${item.id})">❌</button></div></div>`;
                 } else {
                     const isIncome = item.type === '收入';
-                    listHtml += `<div class="history-item"><div class="item-left ${isIncome ? 'income-border' : 'expense-border'}"><div class="item-date">${itemCleanStr}</div><div class="item-title"><span class="item-acc-tag">${item.account}</span>${isIncome ? item.mainCategory : item.mainCategory + '<span class="item-sub-tag">' + (item.subCategory || '') + '</span>'}</div><div class="item-note">${item.note}</div></div><div class="item-right"><div class="item-amount" style="color: ${isIncome?'#2ecc71':'#e74c3c'};">${isIncome?'+':'-'}$${item.amount}</div><button class="btn-delete" onclick="deleteRecord(${item.id})">❌</button></div></div>`;
+                    listHtml += `<div class="history-item"><div class="item-left ${isIncome ? 'income-border' : 'expense-border'}"><div class="item-date">${item.date}</div><div class="item-title"><span class="item-acc-tag">${item.account}</span>${isIncome ? item.mainCategory : item.mainCategory + '<span class="item-sub-tag">' + (item.subCategory || '') + '</span>'}</div><div class="item-note">${item.note}</div></div><div class="item-right"><div class="item-amount" style="color: ${isIncome?'#2ecc71':'#e74c3c'};">${isIncome?'+':'-'}$${item.amount}</div><button class="btn-delete" onclick="deleteRecord(${item.id})">❌</button></div></div>`;
                 }
             }
         });
@@ -1002,7 +948,7 @@
 
         for (const cat in budgets) {
             hasAnyBudget = true; const budgetLimit = budgets[cat], currentSpent = monthBudgetSpentMap[cat] || 0, remaining = budgetLimit - currentSpent;
-            const yearLimit = budgetLimit * 12, currentYearSpent = yearBudgetSpentMap[cat] || 0;
+            const yearLimit = budgetLimit * bMonth; const currentYearSpent = yearBudgetSpentMap[cat] || 0;
             sumBudgetAmount += budgetLimit; sumSpentAmount += currentSpent; sumYearBudgetAmount += yearLimit; sumYearSpentAmount += currentYearSpent;
             let percent = budgetLimit > 0 ? (currentSpent / budgetLimit) * 100 : 0; if (percent > 100) percent = 100; const isOver = currentSpent > budgetLimit;
             
@@ -1022,13 +968,14 @@
 
         for (const groupName in customGroupBudgets) {
             hasAnyBudget = true; const group = customGroupBudgets[groupName], budgetLimit = group.limit, currentSpent = customGroupSpentMap[groupName] || 0, remaining = budgetLimit - currentSpent;
-            const yearBudgetLimit = budgetLimit * 12, currentYearSpent = customGroupYearSpentMap[groupName] || 0;
+            const yearBudgetLimit = budgetLimit * bMonth; const currentYearSpent = customGroupYearSpentMap[groupName] || 0;
             sumBudgetAmount += budgetLimit; sumSpentAmount += currentSpent; sumYearBudgetAmount += yearBudgetLimit; sumYearSpentAmount += currentYearSpent;
 
             let percent = budgetLimit > 0 ? (currentSpent / budgetLimit) * 100 : 0; if (percent > 100) percent = 100; const isOver = currentSpent > budgetLimit;
+            let yearPercent = yearBudgetLimit > 0 ? (currentYearSpent / yearBudgetLimit) * 100 : 0; if (yearPercent > 100) yearPercent = 100; const isYearOver = currentYearSpent > yearBudgetLimit;
             
             budgetListSection.insertAdjacentHTML('beforeend', `
-                <div class="budget-item custom-budget-item" style="border-left: 3px solid #3182ce; background: #fff; padding: 8px; margin-bottom: 8px;">
+                <div class="budget-item custom-budget-item">
                     <div class="budget-info"><span style="color:#2b6cb0;">🧩 <strong>${groupName}</strong></span>
                         <div class="budget-action-btns">
                             <span style="color: ${isOver?'#e74c3c':'#2ecc71'}; font-weight: bold; margin-right: 4px;">${isOver ? '超支 $' + Math.abs(remaining) : '剩 $' + remaining}</span>
@@ -1039,6 +986,8 @@
                     <div class="budget-info" style="color: #4a5568; font-size: 11px; margin-bottom: 4px;"><span>包含: ${group.subCats ? group.subCats.join(', ') : ''}</span></div>
                     <div class="budget-info" style="color: #718096; font-size: 11px;"><span>當月 已花 $${currentSpent.toLocaleString()} / 預算 $${budgetLimit.toLocaleString()}</span></div>
                     <div class="progress-bar-bg"><div class="${isOver?'progress-bar-fill progress-over':'progress-bar-fill'}" style="width: ${percent}%;"></div></div>
+                    <div class="budget-info" style="color: #718096; font-size: 11px; margin-top: 4px;"><span>年度累計 已花 $${currentYearSpent.toLocaleString()} / 預算 $${yearBudgetLimit.toLocaleString()}</span></div>
+                    <div class="progress-bar-bg year-bg"><div class="progress-bar-fill year-fill ${isYearOver?'progress-over':''}" style="width: ${yearPercent}%;"></div></div>
                 </div>`);
         }
 
@@ -1059,11 +1008,11 @@
         }
         
         if (!document.getElementById('chartsWrapper').classList.contains('collapsed')) {
-            renderThreeSeparateCharts(startFilterStr, endFilterStr, expenseChartMap, incomeChartMap, dailyAssetTimeline);
+            renderThreeSeparateCharts(startFilter, endFilter, expenseChartMap, incomeChartMap, dailyAssetTimeline);
         }
     }
 
-    function renderThreeSeparateCharts(startStr, endStr, expenseDataMap, incomeDataMap, dailyAssetTimeline) {
+    function renderThreeSeparateCharts(start, end, expenseDataMap, incomeDataMap, dailyAssetTimeline) {
         const totalExpenseInPeriod = Object.values(expenseDataMap).reduce((a, b) => a + b, 0);
         const expenseLabels = Object.keys(expenseDataMap).filter(k => expenseDataMap[k] > 0).map(k => `${k} ($${expenseDataMap[k].toLocaleString()})`);
         const expenseValues = Object.keys(expenseDataMap).filter(k => expenseDataMap[k] > 0).map(k => expenseDataMap[k]);
@@ -1091,23 +1040,11 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
 
-        // 🌟【優化死迴圈】：不再使用 Date 遞增，改用乾淨的字串索引
-        let timelineMap = {};
-        let sDate = parseLocalDate(startStr), eDate = parseLocalDate(endStr);
-        let maxSafety = 0; 
-        while (sDate <= eDate && maxSafety < 400) {
-            timelineMap[formatToLocalDateString(sDate)] = 0;
-            sDate.setDate(sDate.getDate() + 1);
-            maxSafety++;
-        }
-        
+        let timelineMap = {}; let currLoop = new Date(start);
+        while (currLoop <= end) { timelineMap[currLoop.toISOString().split('T')[0]] = 0; currLoop.setDate(currLoop.getDate() + 1); }
         Object.keys(timelineMap).forEach(dStr => {
             if (dailyAssetTimeline[dStr] !== undefined) timelineMap[dStr] = dailyAssetTimeline[dStr];
-            else { 
-                let fallback = 0; 
-                Object.keys(dailyAssetTimeline).forEach(t => { if (t <= dStr) fallback = dailyAssetTimeline[t]; }); 
-                timelineMap[dStr] = fallback; 
-            }
+            else { let fallback = 0; Object.keys(dailyAssetTimeline).forEach(t => { if (parseLocalDate(t) <= parseLocalDate(dStr)) fallback = dailyAssetTimeline[t]; }); timelineMap[dStr] = fallback; }
         });
         const lineLabels = Object.keys(timelineMap).sort(), lineValues = lineLabels.map(d => timelineMap[d]);
         if (lineChartInstance) lineChartInstance.destroy();
