@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的智慧帳本 v13.3 雲端修正版</title>
+    <title>我的智慧帳本 v13.5 資料修復版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -221,12 +221,17 @@
 <div class="main-layout">
     <div class="container">
         <h2>
-            <span>我的智慧帳本 v13.3 雲端修正版 ☁️</span>
+            <span>我的智慧帳本 v13.5 資料修復版 ☁️</span>
             <div class="cloud-status-bar" id="cloudStatusBar" style="margin-bottom:0; padding:4px 8px; font-size:11px;">
                 <span id="cloudStatusText">正在連接雲端...</span>&nbsp;
                 <div class="sync-loading-spinner" id="cloudStatusSpinner"></div>
             </div>
         </h2>
+
+        <div style="background: #fff5f5; border: 1px solid #fed7d7; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: #c53030; font-weight: bold;">⚠️ 歷史錯誤時間修復工具：如果發現舊資料依然少一天，請點擊右側按鈕強制校正。</span>
+            <button style="background-color: var(--danger-color); font-size: 11px; padding: 4px 8px;" onclick="forceRepairDataTime()">手動強制校正並覆蓋雲端</button>
+        </div>
 
         <div class="dashboard">
             <div class="balance-title">淨資產總額 (資產 - 信用卡負債)</div>
@@ -300,7 +305,7 @@
         <div class="analysis-section">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin-bottom: 0;">🎛️ 視覺圖表分析大面板</h3>
-                <button class="btn-toggle-view" id="btnToggleCharts" style="background-color: var(--primary-color);" onclick="toggleChartsCollapse()">📊 開氣視覺圖表</button>
+                <button class="btn-toggle-view" id="btnToggleCharts" style="background-color: var(--primary-color);" onclick="toggleChartsCollapse()">📊 開啟視覺圖表</button>
             </div>
             
             <div class="charts-wrapper collapsed" id="chartsWrapper">
@@ -483,9 +488,15 @@
     let pieChartInstance = null, barChartInstance = null, lineChartInstance = null;
     function isCreditCard(accName) { return accName.includes('信用卡'); }
 
-    // 核心時間解析：乾淨單純處理 YYYY-MM-DD
+    // 核心時間解析：強制防禦雲端 ISO 格式 (T, Z 污染處理)
     function parseLocalDate(dateStr) {
         if (!dateStr) return new Date();
+        
+        // 如果帶有 T 或者是完整 ISO 格式，先切出最乾淨的前 10 碼 (YYYY-MM-DD)
+        if (typeof dateStr === 'string' && dateStr.includes('T')) {
+            dateStr = dateStr.substring(0, 10);
+        }
+        
         const parts = dateStr.split('-');
         if (parts.length === 2) {
             return new Date(Number(parts[0]), Number(parts[1]) - 1, 1, 0, 0, 0);
@@ -525,12 +536,7 @@
                 const cloud = resData.data;
                 
                 if(cloud.accounts && Object.keys(cloud.accounts).length > 0) accountBalances = cloud.accounts;
-                if(cloud.records) {
-                    records = cloud.records;
-                    records.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
-                }
-                if (cloud.budgets) budgets = cloud.budgets;
-
+                if(cloud.budgets) budgets = cloud.budgets;
                 if (cloud.customGroupBudgets) {
                     let remoteCustom = cloud.customGroupBudgets;
                     if (typeof remoteCustom === 'string' && remoteCustom.trim().startsWith('{')) {
@@ -539,7 +545,41 @@
                     customGroupBudgets = Object.keys(remoteCustom).length > 0 ? remoteCustom : {};
                 }
 
-                saveToLocal();
+                if(cloud.records) {
+                    records = cloud.records;
+                    
+                    // 🚀 核心修復邏輯（特效藥）：檢查雲端抓下來的原始資料是否有被減去 8 小時（產生 T16:00:00）的髒資料
+                    let repairedCount = 0;
+                    records.forEach(r => {
+                        // 如果字串包含 T16:00，表示原本是 YYYY-MM-DD，被轉成 UTC 後減了 8 小時變成前一天的 16:00
+                        if (r.date && r.date.includes('T16:00:00')) {
+                            // 加回 8 小時修正回原本的日期
+                            let d = new Date(r.date);
+                            d.setHours(d.getHours() + 8);
+                            r.date = d.toISOString().split('T')[0];
+                            repairedCount++;
+                        } else if (r.date && r.date.includes('T')) {
+                            // 其他形式的 ISO 欄位，直接做安全擷取
+                            r.date = r.date.substring(0, 10);
+                        }
+                    });
+
+                    // 如果有成功修復受污染的髒資料，自動重新寫入回雲端，一勞永逸
+                    if (repairedCount > 0) {
+                        console.log(`[系統自動修復] 偵測到 ${repairedCount} 筆受時區污染的原始資料，已自動校正加回 8 小時！`);
+                        records.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
+                        saveToLocal();
+                        // 立即將洗乾淨的正確歷史資料覆蓋推回雲端試算表
+                        setTimeout(() => {
+                            pushToCloud();
+                            alert(`【🎉 智慧時區修復成功】\n系統偵測到雲端有 ${repairedCount} 筆歷史資料時間遭到時區污染（少一天）。\n目前已全面自動加回 8 小時校正完畢，並同步更新雲端試算表！請安心使用。`);
+                        }, 800);
+                    } else {
+                        records.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
+                        saveToLocal();
+                    }
+                }
+
                 setCloudStatus("雲端已同步", false);
                 document.getElementById('cloudLoadingLock').style.display = 'none';
                 updateUI();
@@ -555,8 +595,49 @@
         });
     }
 
+    // 保險機制：手動強制將目前畫面上所有看得到的資料「全面加一天（24小時）」並強行洗淨上傳雲端
+    function forceRepairDataTime() {
+        if (!confirm("確定要執行手動強制校正嗎？\n這會將目前所有的帳目紀錄日期「全部往後移一天」，請在確認歷史資料被減了一天時才執行！")) return;
+        
+        let count = 0;
+        records.forEach(r => {
+            let d = parseLocalDate(r.date);
+            d.setDate(d.getDate() + 1); // 強制加一天
+            r.date = d.toISOString().split('T')[0];
+            count++;
+        });
+        
+        records.sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
+        saveToLocal();
+        updateUI();
+        
+        setCloudStatus("手動校正同步中...", true);
+        const serializedCustomGroups = JSON.stringify(customGroupBudgets);
+        const payload = {
+            action: "syncAll",
+            accounts: Object.keys(accountBalances).map(k => [k, accountBalances[k]]),
+            budgets: Object.keys(budgets).map(k => [k, budgets[k]]),
+            customGroupBudgets: serializedCustomGroups,
+            records: records
+        };
+        
+        fetch(CLOUD_API_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(resData => {
+            if(resData.status === "success") { 
+                setCloudStatus("雲端已同步", false); 
+                alert(`強制修復完畢！共更新 ${count} 筆資料，已成功覆蓋雲端。`);
+            } else { 
+                alert("寫入雲端失敗，請重新整理再試一次。");
+            }
+        });
+    }
+
     function loadFromLocalFallback() {
         records = JSON.parse(localStorage.getItem('smart_ledger_records')) || [];
+        records.forEach(r => {
+            if (r.date && r.date.includes('T')) r.date = r.date.substring(0, 10);
+        });
         budgets = JSON.parse(localStorage.getItem('smart_ledger_budgets')) || {}; 
         customGroupBudgets = JSON.parse(localStorage.getItem('smart_ledger_custom_budgets')) || {}; 
         accountBalances = JSON.parse(localStorage.getItem('smart_ledger_accounts')) || accountBalances;
@@ -566,6 +647,12 @@
 
     function pushToCloud() {
         setCloudStatus("同步中...", true);
+        
+        // 推送前也確保所有紀錄的日期都已被清理乾淨 YYYY-MM-DD 字串
+        records.forEach(r => {
+            if (r.date && r.date.includes('T')) r.date = r.date.substring(0, 10);
+        });
+        
         const serializedCustomGroups = JSON.stringify(customGroupBudgets);
 
         const payload = {
@@ -770,7 +857,9 @@
         const note = document.getElementById('note').value, chosenDate = document.getElementById('recordDate').value;
         if (!chosenDate || isNaN(amount) || amount <= 0) { alert('請輸入日期與金額！'); return; }
 
-        let newRecord = { id: Date.now(), type: type, amount: amount, note: note ? note : '無備註', date: chosenDate };
+        let cleanDate = chosenDate.includes('T') ? chosenDate.substring(0, 10) : chosenDate;
+
+        let newRecord = { id: Date.now(), type: type, amount: amount, note: note ? note : '無備註', date: cleanDate };
         if (type === '轉帳') {
             const fromAcc = document.getElementById('fromAccountSelect').value, toAcc = document.getElementById('toAccountSelect').value;
             if (fromAcc === toAcc) { alert('帳戶不能相同！'); return; }
@@ -797,7 +886,8 @@
         accountNames.forEach(name => { csvContent += `${name},${accountBalances[name]}\n`; });
         csvContent += "=== 明細流水帳紀錄開始 ===\n交易日期,交易類型,主分類/大項,子分類/小項,交易帳戶/細節,金額,備註說明\n";
         records.forEach(item => {
-            let row = [item.date, item.type];
+            let cleanDate = item.date.includes('T') ? item.date.substring(0, 10) : item.date;
+            let row = [cleanDate, item.type];
             if (item.type === '轉帳') { row.push("內部轉帳", "-", `從 [${item.fromAccount}] 轉到 [${item.toAccount}]`); } 
             else { row.push(item.mainCategory, item.type === '支出' ? item.subCategory : "-", item.account); }
             let safeNote = item.note ? String(item.note).replace(/,/g, " ") : "無備註";
@@ -825,7 +915,9 @@
                         let parts = line.split(","); if (parts.length === 2 && accountNames.includes(parts[0].trim())) parsedBalances[parts[0].trim()] = parseInt(parts[1].trim()) || 0;
                     } else {
                         let cols = line.split(","); if (cols.length < 6) continue;
-                        let item = { id: Date.now() + i, date: cols[0].trim(), type: cols[1].trim(), amount: parseInt(cols[5].trim()) || 0, note: cols[6]?cols[6].trim():"無備註" };
+                        let rawDate = cols[0].trim();
+                        let cleanDate = rawDate.includes('T') ? rawDate.substring(0, 10) : rawDate;
+                        let item = { id: Date.now() + i, date: cleanDate, type: cols[1].trim(), amount: parseInt(cols[5].trim()) || 0, note: cols[6]?cols[6].trim():"無備註" };
                         if (item.type === '轉帳') {
                             let match = cols[4].trim().match(/從 \[(.*?)\] 轉到 \[(.*?)\]/); if (match) { item.fromAccount = match[1]; item.toAccount = match[2]; }
                         } else { item.mainCategory = cols[2].trim(); item.subCategory = cols[3].trim() === '-' ? '' : cols[3].trim(); item.account = cols[4].trim(); }
@@ -845,7 +937,6 @@
         let currentBalances = JSON.parse(JSON.stringify(accountBalances));
         let totalIncome = 0, totalExpense = 0;
 
-        // 獲取當前被選取的預算月份基準字串 (例如："2026-06")
         const selectedBudgetMonthStr = document.getElementById('budgetMonthSelect').value; 
         const budgetTargetDate = parseLocalDate(selectedBudgetMonthStr); 
         const bYear = budgetTargetDate.getFullYear();
@@ -867,12 +958,14 @@
         const endFilter = parseLocalDate(document.getElementById('analysisEndDate').value);
         
         const filterTimeMode = document.getElementById('filterTimeMode').value;
-        const filterMonthStr = document.getElementById('filterMonthSelect').value; // 格式 "YYYY-MM"
+        const filterMonthStr = document.getElementById('filterMonthSelect').value; 
         const filterStartDay = parseLocalDate(document.getElementById('filterStartDate').value);
         const filterEndDay = parseLocalDate(document.getElementById('filterEndDate').value);
         const filterTargetCategory = document.getElementById('filterCategorySelect').value;
 
         chronologicalRecords.forEach(item => {
+            if (item.date && item.date.includes('T')) item.date = item.date.substring(0, 10);
+
             if (item.type === '轉帳') {
                 currentBalances[item.fromAccount] -= item.amount;
                 if (isCreditCard(item.toAccount)) { currentBalances[item.toAccount] -= item.amount; } 
@@ -892,14 +985,12 @@
                         let rMonth = parseInt(item.date.substring(5, 7));
                         let rYearMonthStr = item.date.substring(0, 7);
                         
-                        // 當月支出
                         if (rYearMonthStr === selectedBudgetMonthStr) {
                             if (monthBudgetSpentMap[item.mainCategory] !== undefined) monthBudgetSpentMap[item.mainCategory] += item.amount;
                             Object.keys(customGroupBudgets).forEach(gName => {
                                 if (customGroupBudgets[gName].subCats && customGroupBudgets[gName].subCats.includes(item.subCategory)) customGroupSpentMap[gName] += item.amount;
                             });
                         }
-                        // 年度累計支出 (至目前選擇月份為止)
                         if (rYear === bYear && rMonth <= bMonth) {
                             if (yearBudgetSpentMap[item.mainCategory] !== undefined) yearBudgetSpentMap[item.mainCategory] += item.amount;
                             Object.keys(customGroupBudgets).forEach(gName => {
@@ -918,6 +1009,8 @@
 
         let listHtml = '', matchCount = 0;
         records.forEach(item => {
+            if (item.date && item.date.includes('T')) item.date = item.date.substring(0, 10);
+
             let passTime = filterTimeMode === 'month' ? (item.date.substring(0, 7) === filterMonthStr) : (parseLocalDate(item.date) >= filterStartDay && parseLocalDate(item.date) <= filterEndDay);
             let passCategory = filterTargetCategory === 'ALL' ? true : (filterTargetCategory === '內部轉帳' ? item.type === '轉帳' : (item.type !== '轉帳' && item.mainCategory === filterTargetCategory));
 
