@@ -1,920 +1,1199 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>每日烹飪排程與量化備料系統</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的智慧帳本</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root {
+  --primary:#3b5bdb; --primary-light:#edf2ff; --primary-dark:#2f4ac0;
+  --success:#2f9e44; --success-light:#ebfbee;
+  --danger:#e03131;  --danger-light:#fff5f5;
+  --warning:#e67700; --purple:#7048e8;
+  --bg:#f1f3f9; --surface:#fff; --surface2:#f8f9fc;
+  --border:#e3e7f1; --text:#1a1f36; --text-2:#4a5072; --text-3:#8892b0;
+  --radius:10px; --shadow:0 4px 16px rgba(0,0,0,.07); --tr:.15s ease;
+}
+*{box-sizing:border-box}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;padding:16px;color:var(--text);font-size:14px}
+#cloudLoadingLock{position:fixed;inset:0;background:rgba(255,255,255,.97);z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px}
+.lock-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+#lockStatusText{font-size:14px;font-weight:600;color:var(--primary)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.main-layout{display:flex;gap:16px;width:100%;max-width:1440px;margin:0 auto}
+.container{background:var(--surface);padding:24px;border-radius:var(--radius);box-shadow:var(--shadow);flex:1.35;min-width:0}
+.sidebar{background:var(--surface);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);flex:0.65;display:flex;flex-direction:column;gap:20px;min-width:260px;max-width:360px}
+.app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.app-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.cloud-status-bar{display:flex;align-items:center;gap:6px;background:var(--primary-light);border:1px solid #c5d0fa;color:var(--primary);padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--primary)}
+.sync-dot.spinning{background:transparent;border:2px solid var(--primary);border-top-color:transparent;animation:spin .8s linear infinite;width:10px;height:10px}
+.dashboard{background:linear-gradient(135deg,#1e3a8a,#1d4ed8 60%,#3b82f6);color:#fff;padding:18px 20px;border-radius:12px;margin-bottom:16px}
+.balance-title{font-size:11px;color:rgba(255,255,255,.6);text-align:center;letter-spacing:.8px;text-transform:uppercase}
+.balance-amount{font-size:32px;font-weight:700;text-align:center;margin:4px 0 14px;letter-spacing:-1px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px solid rgba(255,255,255,.15);padding-top:12px}
+.step-box{text-align:center}
+.stat-label{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.4px}
+.stat-value{font-size:15px;font-weight:700;margin-top:2px}
+.text-income{color:#6ee7b7}.text-expense{color:#fca5a5}
+.section-title{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.section-title::before{content:'';display:block;width:3px;height:14px;background:var(--primary);border-radius:2px}
 
-        body {
-            display: flex;
-            height: 100vh;
-            background-color: #f5f7fa;
-            color: #333;
-        }
+/* 多筆記帳區樣式 */
+.batch-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; overflow-x: auto; }
+.batch-row { display: flex; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; align-items: center; min-width: 850px; }
+.batch-cell { display: flex; flex-direction: column; gap: 3px; }
+.batch-cell label { font-size: 10px; color: var(--text-2); font-weight: 600; }
+.batch-cell input, .batch-cell select { padding: 5px 8px; font-size: 12px; height: 30px; border-radius: 5px; }
+.btn-remove-row { background: var(--danger-light); color: var(--danger); border: 1px solid #ffc9c9; width: 30px; height: 30px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-top: 15px; transition: all var(--tr); }
+.btn-remove-row:hover { background: var(--danger); color: #fff; }
+.batch-actions { display: flex; gap: 10px; margin-bottom: 20px; }
 
-        .main-content {
-            width: 75%;
-            height: 100%;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar {
-            width: 25%;
-            height: 100%;
-            background-color: #fff;
-            border-left: 1px solid #e2e8f0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.02);
-            overflow-y: auto;
-        }
-
-        header {
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header h1 {
-            font-size: 1.5rem;
-            color: #2d3748;
-        }
-
-        .nav-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .btn-nav {
-            padding: 6px 14px;
-            background-color: #fff;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            font-weight: bold;
-            color: #4a5568;
-            transition: all 0.2s;
-        }
-
-        .btn-nav:hover {
-            background-color: #edf2f7;
-            border-color: #a0aec0;
-        }
-
-        .current-range-display {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #2d3748;
-        }
-
-        .summary-panel {
-            background-color: #ebf8ff;
-            border: 1px solid #bee3f8;
-            border-radius: 8px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .summary-title {
-            font-weight: bold;
-            color: #2b6cb0;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
-        .ingredients-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            list-style: none;
-            font-size: 0.9rem;
-        }
-
-        .ingredient-tag {
-            background-color: #fff;
-            border: 1px solid #3182ce;
-            padding: 6px 12px;
-            border-radius: 6px;
-            color: #2b6cb0;
-            font-weight: bold;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .week-header-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .weekday-label {
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: #718096;
-            padding: 6px 0;
-            background-color: #e2e8f0;
-            border-radius: 4px;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-        }
-
-        .day-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            min-height: 240px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .day-card:hover:not(.empty) {
-            border-color: #cbd5e0;
-        }
-
-        .day-card.active-select {
-            border-color: #4299e1;
-            background-color: #f7fafc;
-            box-shadow: 0 0 0 2px #4299e1;
-        }
-
-        .day-card.empty {
-            background-color: #edf2f7;
-            border: 1px dashed #cbd5e0;
-            opacity: 0.6;
-            cursor: default;
-        }
-
-        .day-card.today {
-            background-color: #fffaf0;
-            border-color: #dd6b20;
-        }
-
-        .day-title {
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: #2d3748;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #edf2f7;
-            padding-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .day-title .badge {
-            font-size: 0.75rem;
-            background-color: #dd6b20;
-            color: white;
-            padding: 1px 5px;
-            border-radius: 3px;
-        }
-
-        .meal-slot {
-            margin-bottom: 5px;
-            padding: 4px;
-            background-color: #f7fafc;
-            border: 1px dashed #cbd5e0;
-            border-radius: 4px;
-            min-height: 38px;
-            transition: background-color 0.2s;
-        }
-
-        .meal-slot.drag-over {
-            background-color: #feebc8;
-            border-color: #dd6b20;
-        }
-
-        .meal-slot-title {
-            font-size: 0.65rem;
-            color: #a0aec0;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .placed-dish {
-            background-color: #3182ce;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.75rem;
-            margin-bottom: 2px;
-            cursor: grab;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .placed-dish .remove-btn {
-            cursor: pointer;
-            font-weight: bold;
-            margin-left: 4px;
-            padding: 0 2px;
-            opacity: 0.7;
-        }
-
-        .placed-dish .remove-btn:hover {
-            opacity: 1;
-            color: #fed7d7;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #2d3748;
-            margin-bottom: 12px;
-            margin-top: 15px;
-        }
-
-        .section-title:first-child {
-            margin-top: 0;
-        }
-
-        .category-tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-
-        .tab {
-            padding: 4px 10px;
-            background-color: #edf2f7;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            border: none;
-            color: #4a5568;
-        }
-
-        .tab.active {
-            background-color: #3182ce;
-            color: white;
-        }
-
-        .dish-list {
-            height: 220px;
-            overflow-y: auto;
-            border: 1px solid #edf2f7;
-            border-radius: 6px;
-            padding: 8px;
-            background-color: #f7fafc;
-            margin-bottom: 15px;
-        }
-
-        .dish-item {
-            background-color: #fff;
-            padding: 8px 10px;
-            margin-bottom: 6px;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            cursor: grab;
-            font-size: 0.85rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .dish-item:hover {
-            border-color: #3182ce;
-            background-color: #ebf8ff;
-        }
-
-        .dish-item .action-icons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .dish-item .action-btn {
-            cursor: pointer;
-            color: #a0aec0;
-            font-size: 0.85rem;
-            padding: 2px 4px;
-            transition: color 0.2s;
-        }
-
-        .dish-item .action-btn.edit:hover {
-            color: #3182ce;
-        }
-
-        .dish-item .action-btn.delete:hover {
-            color: #e53e3e;
-        }
-
-        .method-panel {
-            background-color: #f0fff4;
-            border: 1px solid #c6f6d5;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .method-title {
-            font-weight: bold;
-            color: #22543d;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
-
-        .method-text {
-            font-size: 0.85rem;
-            color: #2f855a;
-            white-space: pre-line;
-        }
-
-        .add-dish-form {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 15px;
-        }
-
-        .form-group {
-            margin-bottom: 10px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.8rem;
-            color: #4a5568;
-            margin-bottom: 4px;
-            font-weight: bold;
-        }
-
-        .form-group input[type="text"], .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .checkbox-label {
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 10px;
-            background-color: #48bb78;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-submit:hover {
-            background-color: #38a169;
-        }
-
-        .btn-cancel {
-            width: 100%;
-            padding: 6px;
-            background-color: #e2e8f0;
-            color: #4a5568;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-top: 5px;
-            cursor: pointer;
-            display: none;
-        }
-    </style>
+.form-group{margin-bottom:10px}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1;margin-bottom:0}
+label{display:block;margin-bottom:4px;color:var(--text-2);font-weight:600;font-size:11px;letter-spacing:.3px}
+input,select{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);transition:border-color var(--tr),box-shadow var(--tr);font-family:inherit}
+input:focus,select:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+button{padding:7px 14px;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all var(--tr);font-family:inherit}
+.btn-primary{background:var(--primary);width:100%;padding:11px;font-size:14px;margin-top:4px}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,91,219,.3)}
+.btn-sm{font-size:11px;padding:3px 8px}
+.btn-ghost{background:var(--surface2);color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border);color:var(--text)}
+.btn-success{background:var(--success)}.btn-success:hover{background:#267a38}
+.btn-danger{background:var(--danger)}.btn-danger:hover{background:#c02222}
+.btn-dark{background:#2d3748}.btn-dark:hover{background:#1a202c}
+.btn-backup{font-size:12px;width:100%;padding:9px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-toggle-view{background:var(--surface2);color:var(--text-2);border:1px solid var(--border);font-size:11px;padding:4px 9px}
+.btn-toggle-view:hover{background:var(--border)}
+.shortcut-hint{font-size:10px;color:var(--text-3);margin-top:4px;text-align:right}
+kbd{display:inline-block;padding:1px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;font-size:10px;font-family:inherit;color:var(--text-2);font-weight:600}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.account-card{background:var(--surface2);border:1.5px solid var(--border);padding:8px 10px;border-radius:8px;display:flex;flex-direction:column}
+.account-card.credit{border-left:3px solid var(--danger)}
+.account-card.asset{border-left:3px solid var(--success)}
+.account-name{font-size:11px;font-weight:700;color:var(--text-2)}
+.account-val{font-size:14px;font-weight:700;margin:2px 0}
+.account-input-group{display:flex;gap:4px;margin-top:4px}
+.account-input-group input{padding:3px 5px;font-size:11px;height:22px}
+.account-input-group button{font-size:10px;padding:2px 6px;background:var(--primary)}
+.history-controls{background:var(--surface2);padding:10px 12px;border-radius:9px;border:1px solid var(--border);margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
+.control-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.control-item{flex:1;min-width:130px}
+.control-item label{font-size:11px;margin-bottom:2px}
+.control-item select,.control-item input{padding:5px 8px;font-size:12px}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:28px}
+.search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.4;pointer-events:none}
+.search-count{font-size:10px;color:var(--text-3);margin-top:3px;min-height:14px}
+.history-list-wrapper{max-height:420px;overflow-y:auto;padding-right:2px}
+.history-list-wrapper.collapsed{display:none}
+.history-list-wrapper::-webkit-scrollbar{width:5px}
+.history-list-wrapper::-webkit-scrollbar-track{background:var(--surface2);border-radius:10px}
+.history-list-wrapper::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.history-item{background:var(--surface);padding:9px 12px;border:1px solid var(--border);margin-bottom:6px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;transition:box-shadow var(--tr)}
+.history-item:hover{box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.item-left{border-left:3px solid #cbd5e1;padding-left:9px;min-width:0;flex:1}
+.item-left.income-border{border-left-color:var(--success)}
+.item-left.expense-border{border-left-color:var(--danger)}
+.item-left.transfer-border{border-left-color:var(--purple)}
+.item-date{font-size:10px;color:var(--text-3);font-weight:600}
+.item-title{font-weight:600;color:var(--text);font-size:13px;margin:2px 0;display:flex;align-items:center;flex-wrap:wrap;gap:3px}
+.item-note{font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.item-acc-tag{display:inline-flex;align-items:center;background:#eef2ff;color:#3b5bdb;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:700}
+.item-sub-tag{display:inline-flex;align-items:center;background:var(--surface2);color:var(--text-3);font-size:10px;padding:1px 5px;border-radius:4px}
+.item-right{display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px}
+.item-amount{font-weight:700;font-size:14px;white-space:nowrap}
+.highlight{background:#fff3bf;border-radius:2px;padding:0 1px}
+.btn-item-action{background:none;color:var(--text-3);border:1px solid var(--border);padding:2px 6px;cursor:pointer;font-size:11px;border-radius:5px;transition:all var(--tr)}
+.btn-item-edit:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-light)}
+.btn-item-delete:hover{color:var(--danger);border-color:var(--danger);background:var(--danger-light)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--surface);border-radius:12px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-title{font-size:16px;font-weight:700;margin:0 0 16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;color:var(--text-3);border:none;font-size:20px;padding:0;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-footer{display:flex;gap:8px;margin-top:16px}
+.modal-footer button{flex:1}
+.budget-item{margin-bottom:8px;background:var(--surface);padding:9px 10px;border-radius:8px;border:1px solid var(--border)}
+.budget-info{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;align-items:center}
+.progress-bar-bg{background:var(--border);border-radius:4px;height:5px;overflow:hidden;margin-bottom:2px}
+.progress-bar-bg.year-bg{height:3px;margin-top:3px}
+.progress-bar-fill{background:var(--primary);height:100%;width:0;transition:width .4s ease}
+.progress-bar-fill.year-fill{background:var(--warning)}
+.progress-over{background:var(--danger)!important}
+.budget-action-btns{display:flex;gap:3px;align-items:center}
+.btn-budget-edit,.btn-budget-delete{background:none;color:var(--text-3);border:none;padding:2px 4px;cursor:pointer;font-size:11px;border-radius:4px}
+.btn-budget-edit:hover{color:var(--primary);background:var(--primary-light)}
+.btn-budget-delete:hover{color:var(--danger);background:var(--danger-light)}
+.budget-summary-box{background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:10px;margin-bottom:10px;display:flex;flex-direction:column;gap:5px}
+.budget-summary-row{display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center}
+.budget-summary-row.header{border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:2px}
+.budget-summary-title{font-size:11px;font-weight:700;color:var(--text-2)}
+.budget-summary-label{font-size:10px;color:var(--text-3);font-weight:600;text-align:center}
+.budget-summary-val{font-size:12px;font-weight:700;text-align:center}
+.analysis-section{background:var(--surface2);padding:14px 16px;border-radius:10px;border:1px solid var(--border);margin-top:16px}
+.analysis-header{display:flex;justify-content:space-between;align-items:center}
+.charts-wrapper{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.charts-wrapper.collapsed{display:none}
+.chart-box-standalone{background:var(--surface);padding:12px 14px;border-radius:8px;border:1px solid var(--border);height:240px;position:relative}
+.chart-box-standalone h4{margin:0 0 6px;color:var(--text-2);font-size:11px;text-align:center;font-weight:600}
+.custom-budget-zone{background:#f0f7ff;padding:10px 12px;border-radius:8px;border:1px solid #c3dafe;margin-top:10px}
+.custom-budget-zone h4{margin:0 0 8px;color:#2b6cb0;font-size:12px}
+.custom-budget-item{border-left:3px solid var(--primary)}
+.backup-zone{display:flex;flex-direction:column;gap:5px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1f36;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:10000;transition:transform .3s ease,opacity .3s ease;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:900px){body{padding:10px}.main-layout{flex-direction:column}.sidebar{max-width:100%}.form-row{flex-direction:column;gap:8px}.form-row .form-group{flex:none}.balance-amount{font-size:26px}.control-row{flex-direction:column}.control-item{min-width:100%}}
+@media(max-width:500px){.type-tabs{flex-wrap:wrap}.type-tab{flex:1 1 calc(50% - 3px)}.history-list-wrapper{max-height:300px}.chart-box-standalone{height:200px}}
+</style>
 </head>
 <body>
+<div id="cloudLoadingLock"><div class="lock-spinner"></div><div id="lockStatusText">連線中... 正在載入帳目...</div></div>
+<div id="toastMsg" class="toast"></div>
 
-    <div class="main-content">
-        <header>
-            <h1>烹飪排程與量化備料系統</h1>
-            <span style="color: #718096; font-size: 0.85rem;">提示：直接拖曳菜色到排程中，系統會自動同步至雲端。</span>
-        </header>
-
-        <div class="nav-controls">
-            <button class="btn-nav" onclick="changeWeek(-14)">◀ 上雙週</button>
-            <button class="btn-nav" onclick="goToday()">今天</button>
-            <button class="btn-nav" onclick="changeWeek(14)">下雙週 ▶</button>
-            <span class="current-range-display" id="currentRangeDisplay">載入中...</span>
-        </div>
-
-        <div class="summary-panel" id="summaryPanel">
-            <div class="summary-title" id="summaryTitle">備料清單總計</div>
-            <ul class="ingredients-list" id="ingredientsList"></ul>
-        </div>
-        
-        <div class="week-header-grid">
-            <div class="weekday-label">週一</div><div class="weekday-label">週二</div><div class="weekday-label">週三</div>
-            <div class="weekday-label">週四</div><div class="weekday-label">週五</div><div class="weekday-label">週六</div>
-            <div class="weekday-label">週日</div>
-        </div>
-        
-        <div class="calendar-grid" id="calendarGrid"></div>
+<div id="editModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 編輯記帳明細 <button class="modal-close" onclick="closeEditModal()">✕</button></div>
+    <input type="hidden" id="editRecordId">
+    <div class="form-row" style="margin-bottom:10px">
+      <div class="form-group"><label>交易類型</label>
+        <select id="editType" onchange="handleEditTypeChange()">
+          <option value="支出">支出 💸</option><option value="收入">收入 💰</option><option value="轉帳">轉帳 🔄</option>
+        </select>
+      </div>
+      <div class="form-group"><label>交易日期</label><input type="date" id="editDate"></div>
     </div>
-
-    <div class="sidebar">
-        <div class="method-panel" id="methodPanel">
-            <div class="method-title" id="methodDishName">菜色名稱</div>
-            <div class="method-text" id="methodContent">烹飪手法說明...</div>
-        </div>
-
-        <div class="section-title">我的菜色庫</div>
-        
-        <div class="category-tabs" id="categoryTabs">
-            <button class="tab active" onclick="filterDishes('全部', this)">全部</button>
-            <button class="tab" onclick="filterDishes('早餐', this)">早餐</button>
-            <button class="tab" onclick="filterDishes('中餐', this)">中餐</button>
-            <button class="tab" onclick="filterDishes('晚餐', this)">晚餐</button>
-            <button class="tab" onclick="filterDishes('宵夜', this)">宵夜</button>
-            <button class="tab" onclick="filterDishes('點心', this)">點心</button>
-        </div>
-
-        <div class="dish-list" id="dishList"></div>
-
-        <div class="add-dish-form">
-            <div class="section-title" id="formTitle">新增自訂菜色</div>
-            <input type="hidden" id="editDishId" value="">
-            
-            <div class="form-group">
-                <label for="dishName">菜色名稱</label>
-                <input type="text" id="dishName" placeholder="例如：番茄炒蛋">
-            </div>
-            <div class="form-group">
-                <label>歸類標籤 (可多選)</label>
-                <div class="checkbox-grid">
-                    <label class="checkbox-label"><input type="checkbox" name="tags" value="早餐"> 早餐</label>
-                    <label class="checkbox-label"><input type="checkbox" name="tags" value="中餐"> 中餐</label>
-                    <label class="checkbox-label"><input type="checkbox" name="tags" value="晚餐"> 晚餐</label>
-                    <label class="checkbox-label"><input type="checkbox" name="tags" value="宵夜"> 宵夜</label>
-                    <label class="checkbox-label"><input type="checkbox" name="tags" value="點心"> 點心</label>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="dishIngredients">所需材料與量化 (用逗號隔開)</label>
-                <input type="text" id="dishIngredients" placeholder="例如：白飯300g, 豬肉絲100g, 雞蛋2顆">
-            </div>
-            <div class="form-group">
-                <label for="dishMethod">烹飪手法說明</label>
-                <textarea id="dishMethod" rows="3" placeholder="請描述配方與煮法..."></textarea>
-            </div>
-            <button class="btn-submit" id="btnSubmit" onclick="saveDish()">加入菜色庫</button>
-            <button class="btn-cancel" id="btnCancel" onclick="clearForm()">取消編輯</button>
-        </div>
+    <div class="form-group" id="editNormalAccGroup"><label>交易帳戶</label><select id="editAccount"></select></div>
+    <div class="form-row" id="editTransferGroup" style="display:none;margin-bottom:10px">
+      <div class="form-group"><label>轉出帳戶</label><select id="editFromAccount"></select></div>
+      <div class="form-group"><label>轉入帳戶</label><select id="editToAccount"></select></div>
     </div>
+    <div class="form-row" id="editCategoryRow" style="margin-bottom:10px">
+      <div class="form-group"><label id="editMainCatLabel">支出大項</label><select id="editMainCategory" onchange="handleEditMainCatChange()"></select></div>
+      <div class="form-group" id="editSubCategoryGroup"><label>支出小項</label><select id="editSubCategory"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>金額</label><input type="number" id="editAmount" placeholder="金額" inputmode="decimal"></div>
+      <div class="form-group"><label>備註說明</label><input type="text" id="editNote" placeholder="備註"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeEditModal()">取消</button>
+      <button class="btn-primary" style="margin-top:0" onclick="saveEditRecord()">儲存變更</button>
+    </div>
+  </div>
+</div>
 
-    <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwoHtAUTSVOkAmMkVp1MpWq7_oJGJP8mDxjU5uHi6sZ-8AlHmydABJ1qoGC0PzyhJ9P/exec";
+<div class="main-layout">
+<div class="container">
+  <div class="app-header">
+    <div class="app-title">📒 我的智慧帳本</div>
+    <div class="cloud-status-bar"><div class="sync-dot" id="cloudStatusDot"></div><span id="cloudStatusText">連接中...</span></div>
+  </div>
+  
+  <div class="dashboard">
+    <div class="balance-title">淨資產總額（資產 − 信用卡負債）</div>
+    <div class="balance-amount" id="netBalance">$0</div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-label">本期收入</div><div class="stat-value text-income">+$<span id="totalIncome">0</span></div></div>
+      <div class="stat-box"><div class="stat-label">本期支出</div><div class="stat-value text-expense">−$<span id="totalExpense">0</span></div></div>
+    </div>
+  </div>
 
-        let dishDatabase = [];
-        let menuSchedule = {};
-        let currentFilter = '全部';
-        let selectedDateKey = null;
-        
-        // 排程起始錨定點日期（預設為今天）
-        let calendarAnchorDate = new Date();
+  <!-- 多筆記帳動態輸入區 -->
+  <div class="section-title">批次新增記帳</div>
+  <div id="batchInputContainer" class="batch-container">
+    <!-- 動態生成輸入列 -->
+  </div>
+  <div class="batch-actions">
+    <button class="btn-ghost btn-sm" onclick="addBatchRow()">➕ 增加一筆</button>
+  </div>
+  <button class="btn-primary" onclick="addBatchRecords()">🚀 批次新增並同步雲端</button>
+  <div class="shortcut-hint">快捷鍵：輸入完畢後點擊上方按鈕一次同步</div>
 
-        function updateSyncStatus(status, text) {
-            let bar = document.getElementById('syncStatusBar');
-            if (!bar) {
-                bar = document.createElement('div');
-                bar.id = 'syncStatusBar';
-                bar.style = "position: fixed; top: 0; left: 0; width: 100%; text-align: center; font-size: 0.8rem; padding: 4px; z-index: 9999; font-weight: bold;";
-                document.body.appendChild(bar);
-            }
-            if (status === 'loading') {
-                bar.style.backgroundColor = '#feebc8'; bar.style.color = '#dd6b20'; bar.innerText = text || '⏳ 雲端資料同步中...';
-            } else if (status === 'success') {
-                bar.style.backgroundColor = '#c6f6d5'; bar.style.color = '#22543d'; bar.innerText = text || '✅ 雲端同步成功';
-                setTimeout(() => bar.style.display = 'none', 2000);
-            } else if (status === 'error') {
-                bar.style.backgroundColor = '#fed7d7'; bar.style.color = '#9b2c2c'; bar.innerText = text || '❌ 同步失敗，請檢查網路';
-            }
-            bar.style.display = 'block';
+  <div class="analysis-section">
+    <div class="analysis-header">
+      <div class="section-title" style="margin-bottom:0">視覺圖表分析</div>
+      <button class="btn-toggle-view" id="btnToggleCharts" onclick="toggleChartsCollapse()">📊 展開圖表</button>
+    </div>
+    <div class="charts-wrapper collapsed" id="chartsWrapper">
+      <div class="form-row" style="margin-top:10px;margin-bottom:4px">
+        <div class="form-group"><label style="font-size:11px">圖表開始日期</label><input type="date" id="analysisStartDate" onchange="updateUI()"></div>
+        <div class="form-group"><label style="font-size:11px">圖表結束日期</label><input type="date" id="analysisEndDate" onchange="updateUI()"></div>
+      </div>
+      <div class="chart-box-standalone"><h4>各項支出比例 💸</h4><canvas id="expensePieChart"></canvas></div>
+      <div class="chart-box-standalone"><h4>收入管道分配 💰</h4><canvas id="incomeBarChart"></canvas></div>
+      <div class="chart-box-standalone"><h4>資產淨值走勢 📈</h4><canvas id="assetLineChart"></canvas></div>
+    </div>
+  </div>
+  <div style="margin-top:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="section-title" style="margin-bottom:0">歷史明細</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-toggle-view" id="btnToggleCollapse" onclick="toggleHistoryCollapse()">📂 收合</button>
+        <button class="btn-ghost btn-sm" onclick="clearAllRecords()">清空</button>
+      </div>
+    </div>
+    <div class="history-controls">
+      <div class="control-row">
+        <div class="control-item" style="flex:0.6;min-width:100px">
+          <label>時間模式</label>
+          <select id="filterTimeMode" onchange="handleTimeModeChange()">
+            <option value="month">按月份</option><option value="days">自訂日期</option>
+          </select>
+        </div>
+        <div class="control-item" id="filterMonthGroup"><label>選擇月份</label><select id="filterMonthSelect" onchange="updateUI()"></select></div>
+        <div class="control-item" id="filterDaysGroup" style="display:none;flex:2">
+          <div style="display:flex;gap:6px;align-items:flex-end">
+            <div class="form-group" style="margin:0;flex:1"><label>開始</label><input type="date" id="filterStartDate" onchange="updateUI()"></div>
+            <span style="margin-bottom:6px;color:var(--text-3);font-size:12px">至</span>
+            <div class="form-group" style="margin:0;flex:1"><label>結束</label><input type="date" id="filterEndDate" onchange="updateUI()"></div>
+          </div>
+        </div>
+        <div class="control-item">
+          <label>篩選分類</label>
+          <select id="filterCategorySelect" onchange="updateUI()"><option value="ALL">全部</option></select>
+        </div>
+      </div>
+      <div class="control-row">
+        <div class="control-item" style="flex:1">
+          <label>🔍 搜索備註 / 分類</label>
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchKeyword" placeholder="輸入關鍵字即時搜索…" autocomplete="off">
+          </div>
+          <div class="search-count" id="searchCount"></div>
+        </div>
+      </div>
+    </div>
+    <div class="history-list-wrapper" id="historyListWrapper"><div id="recordList"></div></div>
+  </div>
+</div>
+<div class="sidebar">
+  <div>
+    <div class="section-title">備份與導出</div>
+    <div class="backup-zone">
+      <button class="btn-backup btn-success" onclick="exportToCSV()">📊 匯出 CSV</button>
+      <button class="btn-backup btn-dark" onclick="triggerCSVImport()">📥 匯入 CSV</button>
+      <input type="file" id="importCSVFileInput" accept=".csv" style="display:none" onchange="importFromCSV(event)">
+    </div>
+  </div>
+  <div>
+    <div class="section-title">帳戶資產</div>
+    <div class="account-grid" id="accountGrid"></div>
+  </div>
+  <div>
+    <div class="section-title">預算控管</div>
+    <div style="background:var(--surface2);padding:10px 12px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px">
+      <label style="font-size:11px">預算月份</label>
+      <select id="budgetMonthSelect" onchange="updateUI()" style="font-size:12px;padding:5px;margin-bottom:10px;height:30px"></select>
+      <label style="font-size:11px;margin-top:4px">設定單一預算大項</label>
+      <select id="budgetCategory" style="margin-bottom:7px;padding:5px;font-size:12px;height:30px"></select>
+      <div style="display:flex;gap:6px">
+        <input type="number" id="budgetAmountInput" placeholder="金額" style="padding:5px;font-size:12px;height:30px">
+        <button class="btn-success btn-sm" onclick="saveBudget()">設定</button>
+      </div>
+    </div>
+    <div class="custom-budget-zone">
+      <h4>🧩 自訂小項預算群組</h4>
+      <div class="form-group"><label style="font-size:11px">群組名稱</label><input type="text" id="customGroupName" placeholder="如：日常餐飲" style="padding:5px;font-size:12px;margin-bottom:5px;height:28px"></div>
+      <div class="form-group"><label style="font-size:11px">挑選小項（Ctrl 多選）</label><select id="customGroupSubCats" multiple style="height:80px;font-size:11px;padding:4px"></select></div>
+      <div class="form-group"><label style="font-size:11px">每月預算上限</label>
+        <div style="display:flex;gap:4px">
+          <input type="number" id="customGroupAmount" placeholder="金額" style="padding:5px;font-size:12px;height:28px">
+          <button style="background:var(--primary);font-size:11px;padding:3px 8px" onclick="saveCustomGroupBudget()">建立</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin:12px 0 6px;font-size:12px;font-weight:700;color:var(--text-2)">📋 雙軌預算進度</div>
+    <div class="budget-summary-box" id="budgetSummaryBox" style="display:none">
+      <div class="budget-summary-row header">
+        <span class="budget-summary-title" style="color:var(--text-3);font-size:10px">範疇</span>
+        <span class="budget-summary-label">總預算</span>
+        <span class="budget-summary-label">已花費</span>
+        <span class="budget-summary-label">剩餘</span>
+      </div>
+      <div class="budget-summary-row">
+        <span class="budget-summary-title">🌙 當月</span>
+        <span class="budget-summary-val" id="sumTotalBudget">$0</span>
+        <span class="budget-summary-val" id="sumTotalSpent" style="color:var(--danger)">$0</span>
+        <span class="budget-summary-val" id="sumTotalRemaining" style="color:var(--success)">$0</span>
+      </div>
+      <div class="budget-summary-row" style="border-top:1px dashed var(--border);padding-top:4px">
+        <span class="budget-summary-title">🗓️ 年度</span>
+        <span class="budget-summary-val" id="yearTotalBudget">$0</span>
+        <span class="budget-summary-val" id="yearTotalSpent" style="color:var(--danger)">$0</span>
+        <span class="budget-summary-val" id="yearTotalRemaining" style="color:var(--success)">$0</span>
+      </div>
+    </div>
+    <div id="budgetListSection"></div>
+  </div>
+</div>
+</div>
+<script>
+// ═══════════════════════════════════════════
+//  常數
+// ═══════════════════════════════════════════
+const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwtS-XCaLW48NLfV7xsZDbgJ5ptJ_2QjoQzAiDkJCQIWZUJ6MGuf3tmoYJT2f4qmd6Y/exec";
+const LS = { records:'sl_records', budgets:'sl_budgets', groups:'sl_groups', accounts:'sl_accounts' };
+const ACCOUNT_NAMES = ['現金','台灣銀行','newnewbank','郵局','二信','永豐','玉山信用卡','永豐信用卡','台新信用卡','富邦'];
+const EXPENSE_DATA = {
+  '餐飲食品':['早餐','午餐','晚餐','宵夜','飲料','點心零嘴','食材','水果'],
+  '服飾美容':['衣服褲子','配件','鞋子','剪髮','保養品'],
+  '居家生活':['傢俱','家電','房租','水費','電費','瓦斯費','網路費','電話費','保險費','稅務','阿曦','阿霄','訂閱支出','寶貝寵物','洗衣費用','生活用品','購屋費用'],
+  '運輸交通':['計程車','高鐵','飛機','火車','船費','過路費','公車'],
+  '教育學習':['文具','書籍','學貸','補習費'],
+  '休閒娛樂':['電影','KTV','玩具小物','旅行遊玩','遊戲','彩券','運動健身','出國費用-日本'],
+  '電子商品':['電腦及周邊','3C產品'],
+  '汽機車':['油錢','停車費','保養費用','洗車費用','購車費用'],
+  '醫療保健':['診所就醫','購買藥物','保健食品','健檢檢查'],
+  '人情交際':['送禮','紅包','白包'],
+  '理財投資':['股票','頭期貸款','房屋貸款'],
+  '其他':['捐款','雜支','悠遊卡加值']
+};
+const INCOME_CATS = ['薪水','差旅費','利息','股票','其他'];
+
+// ═══════════════════════════════════════════
+//  狀態
+// ═══════════════════════════════════════════
+let records = [], budgets = {}, customGroupBudgets = {};
+let accountBalances = Object.fromEntries(ACCOUNT_NAMES.map(n => [n, 0]));
+let pieChart = null, barChart = null, lineChart = null;
+let _lockDone = false;
+let batchRowCounter = 0;
+
+// ═══════════════════════════════════════════
+//  工具函式
+// ═══════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const isCreditCard = n => n.includes('信用卡');
+
+function toDateStr(d) {
+  if (!d) return '';
+  const s = String(d);
+  return s.includes('T') ? s.slice(0, 10) : s;
+}
+
+function parseDate(s) {
+  s = toDateStr(s);
+  if (!s) return new Date();
+  const p = s.split('-');
+  if (p.length === 2) return new Date(+p[0], +p[1]-1, 1);
+  if (p.length === 3) return new Date(+p[0], +p[1]-1, +p[2]);
+  return new Date();
+}
+
+function showToast(msg, ms = 2500) {
+  const t = $('toastMsg');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function highlight(text, kw) {
+  if (!kw) return String(text || '');
+  const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text || '').replace(new RegExp(esc, 'gi'), m => `<span class="highlight">${m}</span>`);
+}
+
+function makeOptions(arr, el) {
+  el.innerHTML = arr.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  LocalStorage
+// ═══════════════════════════════════════════
+function saveLocal() {
+  localStorage.setItem(LS.records,  JSON.stringify(records));
+  localStorage.setItem(LS.budgets,  JSON.stringify(budgets));
+  localStorage.setItem(LS.groups,   JSON.stringify(customGroupBudgets));
+  localStorage.setItem(LS.accounts, JSON.stringify(accountBalances));
+}
+
+function loadLocal() {
+  try {
+    const r = localStorage.getItem(LS.records);
+    if (r) { records = JSON.parse(r); records.forEach(x => { x.date = toDateStr(x.date); }); }
+    const b = localStorage.getItem(LS.budgets);  if (b) budgets = JSON.parse(b);
+    const g = localStorage.getItem(LS.groups);   if (g) customGroupBudgets = JSON.parse(g);
+    const a = localStorage.getItem(LS.accounts); if (a) accountBalances = JSON.parse(a);
+  } catch(e) { console.error('[本機讀取]', e); }
+}
+
+// ═══════════════════════════════════════════
+//  雲端
+// ═══════════════════════════════════════════
+function releaseLock() {
+  if (_lockDone) return;
+  _lockDone = true;
+  $('cloudLoadingLock').style.display = 'none';
+}
+
+function setCloudStatus(msg, spinning) {
+  $('cloudStatusText').textContent = msg;
+  $('cloudStatusDot').className = 'sync-dot' + (spinning ? ' spinning' : '');
+}
+
+function buildPayload() {
+  records.forEach(r => { r.date = toDateStr(r.date); });
+  return {
+    action: 'syncAll',
+    accounts: ACCOUNT_NAMES.map(k => [k, accountBalances[k] || 0]),
+    budgets: Object.entries(budgets),
+    customGroupBudgets: JSON.stringify(customGroupBudgets),
+    records
+  };
+}
+
+function pushToCloud() {
+  setCloudStatus('同步中...', true);
+  fetch(CLOUD_URL, { method: 'POST', body: JSON.stringify(buildPayload()) })
+    .then(r => r.json())
+    .then(res => setCloudStatus(res.status === 'success' ? '已同步' : '❌ 失敗', false))
+    .catch(() => setCloudStatus('⚠️ 離線', false));
+}
+
+function fetchCloudData() {
+  setCloudStatus('連線中...', true);
+  const fallback = reason => {
+    console.warn('[雲端]', reason);
+    setCloudStatus('離線模式', false);
+    loadLocal();
+    releaseLock();
+    updateUI();
+  };
+  const timer = setTimeout(() => fallback('逾時 10s'), 10000);
+  fetch(CLOUD_URL)
+    .then(r => {
+      const ct = r.headers.get('content-type') || '';
+      if (!ct.includes('json') && !ct.includes('javascript'))
+        return r.text().then(t => { throw new Error('非JSON: ' + t.slice(0,60)); });
+      return r.json();
+    })
+    .then(res => {
+      clearTimeout(timer);
+      if (!res || res.status !== 'success' || !res.data) { fallback('雲端資料異常'); return; }
+      const c = res.data;
+      if (c.accounts && typeof c.accounts === 'object' && Object.keys(c.accounts).length > 0)
+        accountBalances = c.accounts;
+      if (c.budgets && typeof c.budgets === 'object') budgets = c.budgets;
+      if (c.customGroupBudgets) {
+        let cg = c.customGroupBudgets;
+        if (typeof cg === 'string') { try { cg = JSON.parse(cg); } catch(e) { cg = {}; } }
+        if (typeof cg === 'object') customGroupBudgets = cg;
+      }
+      if (Array.isArray(c.records)) {
+        records = c.records;
+        records.forEach(r => { r.date = toDateStr(r.date); });
+        records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+        saveLocal();
+      }
+      setCloudStatus('已同步', false);
+      releaseLock();
+      updateUI();
+    })
+    .catch(err => { clearTimeout(timer); fallback(err.message); });
+}
+
+// ═══════════════════════════════════════════
+//  UI 初始化
+// ═══════════════════════════════════════════
+function initAccountUI() {
+  $('accountGrid').innerHTML = ACCOUNT_NAMES.map(name => `
+    <div class="${isCreditCard(name) ? 'account-card credit' : 'account-card asset'}">
+      <span class="account-name">${name}</span>
+      <span class="account-val" id="val-${name}">$0</span>
+      <div class="account-input-group">
+        <input type="number" id="input-${name}" placeholder="設初值">
+        <button onclick="updateAccountInit('${name}')">改</button>
+      </div>
+    </div>`).join('');
+}
+
+function initSelects() {
+  ['editAccount','editFromAccount','editToAccount'].forEach(id => {
+    const e = $(id); if (e) makeOptions(ACCOUNT_NAMES, e);
+  });
+  makeOptions(Object.keys(EXPENSE_DATA), $('budgetCategory'));
+}
+
+function initCustomGroupSubCats() {
+  $('customGroupSubCats').innerHTML = Object.entries(EXPENSE_DATA).map(([main, subs]) =>
+    `<optgroup label="【${main}】">${subs.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`
+  ).join('');
+}
+
+function initMonthSelects() {
+  const now = new Date();
+  const opts = Array.from({length: 9}, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 6 + i, 1);
+    const ms = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    return `<option value="${ms}"${i===6?' selected':''}>${ms}</option>`;
+  }).join('');
+  ['budgetMonthSelect','filterMonthSelect'].forEach(id => { $(id).innerHTML = opts; });
+}
+
+function initFilterCats() {
+  const expHtml = Object.keys(EXPENSE_DATA).map(c => `<option value="${c}">${c}</option>`).join('');
+  const incHtml = INCOME_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+  $('filterCategorySelect').innerHTML = `<option value="ALL">全部</option>
+    <optgroup label="💸 支出大項">${expHtml}</optgroup>
+    <optgroup label="💰 收入管道">${incHtml}</optgroup>
+    <option value="內部轉帳">🔄 內部轉帳</option>`;
+}
+
+// ═══════════════════════════════════════════
+//  動態批次多筆記帳 UI 邏輯
+// ═══════════════════════════════════════════
+function addBatchRow() {
+  batchRowCounter++;
+  const id = batchRowCounter;
+  const todayStr = new Date().toISOString().slice(0,10);
+  
+  const rowHtml = `
+    <div class="batch-row" id="batch-row-${id}">
+      <div class="batch-cell" style="width: 90px;">
+        <label>交易類型</label>
+        <select id="batch-type-${id}" onchange="handleBatchTypeChange(${id})">
+          <option value="支出">支出 💸</option>
+          <option value="收入">收入 💰</option>
+          <option value="轉帳">轉帳 🔄</option>
+        </select>
+      </div>
+      <div class="batch-cell" style="width: 125px;">
+        <label>交易日期</label>
+        <input type="date" id="batch-date-${id}" value="${todayStr}">
+      </div>
+      
+      <!-- 一般帳戶選擇 (支出、收入) -->
+      <div class="batch-cell" id="batch-acc-group-${id}" style="width: 120px;">
+        <label>交易帳戶</label>
+        <select id="batch-account-${id}"></select>
+      </div>
+      
+      <!-- 轉帳帳戶選擇 (隱藏) -->
+      <div class="batch-cell" id="batch-from-group-${id}" style="width: 110px; display:none;">
+        <label>轉出帳戶</label>
+        <select id="batch-from-account-${id}"></select>
+      </div>
+      <div class="batch-cell" id="batch-to-group-${id}" style="width: 110px; display:none;">
+        <label>轉入帳戶</label>
+        <select id="batch-to-account-${id}"></select>
+      </div>
+      
+      <!-- 分類選擇 -->
+      <div class="batch-cell" id="batch-main-cat-group-${id}" style="width: 110px;">
+        <label id="batch-main-label-${id}">支出大項</label>
+        <select id="batch-main-cat-${id}" onchange="handleBatchMainCatChange(${id})"></select>
+      </div>
+      <div class="batch-cell" id="batch-sub-cat-group-${id}" style="width: 110px;">
+        <label>支出小項</label>
+        <select id="batch-sub-cat-${id}"></select>
+      </div>
+      
+      <div class="batch-cell" style="width: 90px;">
+        <label>金額</label>
+        <input type="number" id="batch-amount-${id}" placeholder="金額" inputmode="decimal">
+      </div>
+      <div class="batch-cell" style="flex: 1;">
+        <label>備註說明</label>
+        <input type="text" id="batch-note-${id}" placeholder="選填備註">
+      </div>
+      <button class="btn-remove-row" onclick="removeBatchRow(${id})" title="移除此列">✕</button>
+    </div>
+  `;
+  
+  $('batchInputContainer').insertAdjacentHTML('beforeend', rowHtml);
+  
+  // 填入帳戶選項
+  makeOptions(ACCOUNT_NAMES, $(`batch-account-${id}`));
+  makeOptions(ACCOUNT_NAMES, $(`batch-from-account-${id}`));
+  makeOptions(ACCOUNT_NAMES, $(`batch-to-account-${id}`));
+  
+  // 觸發初始類型選單渲染
+  handleBatchTypeChange(id);
+}
+
+function removeBatchRow(id) {
+  const row = $(`batch-row-${id}`);
+  if (row) {
+    if($('batchInputContainer').children.length > 1) {
+      row.remove();
+    } else {
+      showToast('⚠️ 至少需要保留一筆輸入列');
+    }
+  }
+}
+
+function handleBatchTypeChange(id) {
+  const type = $(`batch-type-${id}`).value;
+  const isT = type === '轉帳', isI = type === '收入';
+  
+  $(`batch-acc-group-${id}`).style.display = isT ? 'none' : 'block';
+  $(`batch-from-group-${id}`).style.display = isT ? 'block' : 'none';
+  $(`batch-to-group-${id}`).style.display = isT ? 'block' : 'none';
+  $(`batch-main-cat-group-${id}`).style.display = isT ? 'none' : 'block';
+  $(`batch-sub-cat-group-${id}`).style.display = (isT || isI) ? 'none' : 'block';
+  
+  $(`batch-main-label-${id}`).textContent = isI ? '收入分類' : '支出大項';
+  
+  const ms = $(`batch-main-cat-${id}`);
+  ms.innerHTML = '';
+  if (!isT) {
+    (isI ? INCOME_CATS : Object.keys(EXPENSE_DATA)).forEach(c => {
+      const o = document.createElement('option');
+      o.value = o.textContent = c;
+      ms.appendChild(o);
+    });
+  }
+  if (!isT && !isI) handleBatchMainCatChange(id);
+}
+
+function handleBatchMainCatChange(id) {
+  const mainVal = $(`batch-main-cat-${id}`).value;
+  makeOptions(EXPENSE_DATA[mainVal] || [], $(`batch-sub-cat-${id}`));
+}
+
+function handleEditTypeChange() { syncTypeUI('edit'); }
+function handleEditMainCatChange() { makeOptions(EXPENSE_DATA[$('editMainCategory').value] || [], $('editSubCategory')); }
+
+function syncTypeUI(prefix) {
+  const type = $('editType').value;
+  const isT = type === '轉帳', isI = type === '收入';
+  const s = (id, v) => { const e = $(id); if (e) e.style.display = v; };
+  s('editNormalAccGroup', isT ? 'none' : 'block');
+  s('editTransferGroup', isT ? 'flex' : 'none');
+  s('editCategoryRow', isT ? 'none' : 'flex');
+  s('editSubCategoryGroup', isI ? 'none' : 'block');
+  $('editMainCatLabel').textContent = isI ? '收入分類' : '支出大項';
+  const ms = $('editMainCategory'); ms.innerHTML = '';
+  if (!isT) { (isI ? INCOME_CATS : Object.keys(EXPENSE_DATA)).forEach(c => { const o = document.createElement('option'); o.value = o.textContent = c; ms.appendChild(o); }); }
+  if (!isT && !isI) handleEditMainCatChange();
+}
+
+// 🚀 批次新增儲存功能
+function addBatchRecords() {
+  const rows = $('batchInputContainer').children;
+  let addedCount = 0;
+  let validRecords = [];
+
+  for (let row of rows) {
+    const rowId = row.id.replace('batch-row-', '');
+    const type = $(`batch-type-${rowId}`).value;
+    const amount = parseInt($(`batch-amount-${rowId}`).value);
+    const note = $(`batch-note-${rowId}`).value.trim();
+    const date = toDateStr($(`batch-date-${rowId}`).value);
+
+    // 金額為空或小於等於 0 則視為不輸入（跳過）
+    if (isNaN(amount) || amount <= 0) continue;
+    if (!date) { showToast('⚠️ 請確實選擇日期'); return; }
+
+    const rec = { id: Date.now() + addedCount, type, amount, note: note || '無備註', date };
+    if (type === '轉帳') {
+      const from = $(`batch-from-account-${rowId}`).value;
+      const to = $(`batch-to-account-${rowId}`).value;
+      if (from === to) { showToast('⚠️ 轉帳帳戶不能相同'); return; }
+      rec.fromAccount = from; rec.toAccount = to;
+    } else {
+      rec.account = $(`batch-account-${rowId}`).value;
+      rec.mainCategory = $(`batch-main-cat-${rowId}`).value;
+      rec.subCategory = type === '支出' ? $(`batch-sub-cat-${rowId}`).value : '';
+    }
+    validRecords.push(rec);
+    addedCount++;
+  }
+
+  if (validRecords.length === 0) {
+    showToast('⚠️ 沒有可新增的有效帳目資料（請填入金額）');
+    return;
+  }
+
+  // 合併至主要資歷庫
+  records.push(...validRecords);
+  records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  
+  saveLocal(); 
+  updateUI(); 
+  pushToCloud();
+  
+  // 清空輸入表單，只保留一列全新空白
+  $('batchInputContainer').innerHTML = '';
+  addBatchRow();
+  showToast(`✅ 成功批次同步新增 ${addedCount} 筆交易！`);
+}
+
+// ═══════════════════════════════════════════
+//  Modal 編輯
+// ═══════════════════════════════════════════
+function openEditModal(id) {
+  const r = records.find(x => x.id === id); if (!r) return;
+  $('editRecordId').value = r.id;
+  $('editType').value    = r.type;
+  $('editDate').value    = r.date;
+  $('editAmount').value  = r.amount;
+  $('editNote').value    = r.note === '無備註' ? '' : (r.note || '');
+  syncTypeUI('edit');
+  if (r.type === '轉帳') {
+    $('editFromAccount').value = r.fromAccount || '';
+    $('editToAccount').value   = r.toAccount   || '';
+  } else {
+    $('editAccount').value = r.account || '';
+    const ms = $('editMainCategory');
+    [...ms.options].forEach(o => { o.selected = o.value === r.mainCategory; });
+    handleEditMainCatChange();
+    if (r.subCategory) { const ss = $('editSubCategory'); [...ss.options].forEach(o => { o.selected = o.value === r.subCategory; }); }
+  }
+  $('editModal').style.display = 'flex';
+}
+
+function closeEditModal() { $('editModal').style.display = 'none'; }
+
+function saveEditRecord() {
+  const id  = parseInt($('editRecordId').value);
+  const idx = records.findIndex(x => x.id === id); if (idx === -1) return;
+  const type   = $('editType').value;
+  const amount = parseInt($('editAmount').value);
+  const note   = $('editNote').value.trim();
+  const date   = toDateStr($('editDate').value);
+  if (!date || isNaN(amount) || amount <= 0) { showToast('⚠️ 請填入日期與金額'); return; }
+  const updated = { id, type, amount, note: note || '無備註', date };
+  if (type === '轉帳') {
+    const from = $('editFromAccount').value, to = $('editToAccount').value;
+    if (from === to) { showToast('⚠️ 轉帳帳戶不能相同'); return; }
+    updated.fromAccount = from; updated.toAccount = to;
+  } else {
+    updated.account      = $('editAccount').value;
+    updated.mainCategory = $('editMainCategory').value;
+    updated.subCategory  = type === '支出' ? $('editSubCategory').value : '';
+  }
+  records[idx] = updated;
+  records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  saveLocal(); updateUI(); pushToCloud();
+  closeEditModal();
+  showToast('✅ 已更新');
+}
+
+function deleteRecord(id) {
+  if (!confirm('確定刪除這筆記錄？')) return;
+  records = records.filter(r => r.id !== id);
+  saveLocal(); updateUI(); pushToCloud();
+  showToast('🗑️ 已刪除');
+}
+
+function clearAllRecords() {
+  if (!confirm('確定清空全部明細？此操作無法還原！')) return;
+  records = []; saveLocal(); updateUI(); pushToCloud();
+}
+
+// ═══════════════════════════════════════════
+//  帳戶 & 預算
+// ═══════════════════════════════════════════
+function updateAccountInit(name) {
+  const v = parseInt($(`input-${name}`).value); if (isNaN(v)) return;
+  accountBalances[name] = v; $(`input-${name}`).value = '';
+  saveLocal(); updateUI(); pushToCloud();
+  showToast(`✅ ${name} 已更新`);
+}
+
+function saveBudget() {
+  const cat = $('budgetCategory').value, amt = parseInt($('budgetAmountInput').value);
+  if (isNaN(amt) || amt < 0) return;
+  budgets[cat] = amt; $('budgetAmountInput').value = '';
+  saveLocal(); updateUI(); pushToCloud();
+  showToast(`✅ 「${cat}」預算設定完成`);
+}
+
+// ═══════════════════════════════════════════
+//  自訂預算群組
+// ═══════════════════════════════════════════
+function saveCustomGroupBudget() {
+  const name = $('customGroupName').value.trim();
+  const amt  = parseInt($('customGroupAmount').value);
+  const subs = [...$('customGroupSubCats').selectedOptions].map(o => o.value);
+  if (!name) { showToast('⚠️ 請填寫群組名稱'); return; }
+  if (isNaN(amt) || amt < 0) { showToast('⚠️ 請輸入有效金額'); return; }
+  if (subs.length === 0) { showToast('⚠️ 請至少選一個細項'); return; }
+  customGroupBudgets[name] = { limit: amt, subCats: subs };
+  $('customGroupName').value = ''; $('customGroupAmount').value = '';
+  $('customGroupSubCats').selectedIndex = -1;
+  saveLocal(); updateUI(); pushToCloud();
+  showToast(`✅ 群組「${name}」建立完成`);
+}
+
+function editBudgetAmount(cat, old) {
+  const s = prompt(`「${cat}」新預算：`, old); if (s === null) return;
+  const n = parseInt(s); if (isNaN(n) || n < 0) return;
+  budgets[cat] = n; saveLocal(); updateUI(); pushToCloud();
+}
+function editCustomGroupAmount(name, old) {
+  const s = prompt(`群組「${name}」新預算：`, old); if (s === null) return;
+  const n = parseInt(s); if (isNaN(n) || n < 0) return;
+  customGroupBudgets[name].limit = n; saveLocal(); updateUI(); pushToCloud();
+}
+function deleteBudget(cat) { if (!confirm(`確定刪除「${cat}」月預算？`)) return; delete budgets[cat]; saveLocal(); updateUI(); pushToCloud(); }
+function deleteCustomGroupBudget(name) { if (!confirm(`確定刪除群組「${name}」？`)) return; delete customGroupBudgets[name]; saveLocal(); updateUI(); pushToCloud(); }
+
+// ═══════════════════════════════════════════
+//  CSV
+// ═══════════════════════════════════════════
+function exportToCSV() {
+  let csv = "=== 系統帳戶初始設定配額 ===\n帳戶名稱,初始金額\n";
+  ACCOUNT_NAMES.forEach(n => { csv += `${n},${accountBalances[n]}\n`; });
+  csv += "=== 明細流水帳紀錄開始 ===\n交易日期,交易類型,主分類/大項,子分類/小項,交易帳戶/細節,金額,備註說明\n";
+  records.forEach(r => {
+    let row = [toDateStr(r.date), r.type];
+    if (r.type === '轉帳') row.push('內部轉帳', '-', `從 [${r.fromAccount}] 轉到 [${r.toAccount}]`);
+    else row.push(r.mainCategory||'', r.subCategory||'-', r.account||'');
+    row.push(r.amount, String(r.note||'').replace(/,/g,' '));
+    csv += row.join(',') + "\n";
+  });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'})),
+    download: `智慧記帳本_${new Date().toISOString().slice(0,10)}.csv`
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('📊 CSV 已匯出');
+}
+
+function triggerCSVImport() { $('importCSVFileInput').click(); }
+
+function importFromCSV(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const lines = e.target.result.split('\n');
+      let imported = [], parsedAcc = {...accountBalances}, readingRecs = false;
+      lines.forEach((line, i) => {
+        line = line.trim(); if (!line) return;
+        if (line.includes('=== 明細流水帳紀錄開始 ===')) { readingRecs = true; return; }
+        if (!readingRecs) {
+          const p = line.split(',');
+          if (p.length === 2 && ACCOUNT_NAMES.includes(p[0].trim())) parsedAcc[p[0].trim()] = parseInt(p[1].trim()) || 0;
+        } else {
+          const c = line.split(','); if (c.length < 6) return;
+          const item = { id: Date.now()+i, date: toDateStr(c[0].trim()), type: c[1].trim(), amount: parseInt(c[5].trim())||0, note: c[6]?c[6].trim():'無備註' };
+          if (item.type === '轉帳') { const m = c[4].trim().match(/從 \[(.*?)\] 轉到 \[(.*?)\]/); if (m) { item.fromAccount = m[1]; item.toAccount = m[2]; } }
+          else { item.mainCategory = c[2].trim(); item.subCategory = c[3].trim()==='-'?'':c[3].trim(); item.account = c[4].trim(); }
+          imported.push(item);
         }
+      });
+      if (!confirm(`確認匯入 ${imported.length} 筆資料並覆蓋雲端？`)) return;
+      accountBalances = parsedAcc;
+      records = imported.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+      saveLocal(); updateUI(); pushToCloud();
+      showToast(`✅ 已匯入 ${imported.length} 筆`);
+    } catch(err) { showToast('❌ 匯入失敗：' + err.message); }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
 
-        async function loadCloudData() {
-            updateSyncStatus('loading', '⏳ 正在自 Google 試算表下載備料排程...');
-            try {
-                const response = await fetch(`${GAS_API_URL}?action=getData`);
-                const data = await response.json();
-                
-                dishDatabase = data.dishes || [];
-                menuSchedule = data.schedule || {};
-                
-                if (dishDatabase.length === 0) {
-                    dishDatabase = [
-                        { id: 1, name: "肉絲炒飯", tags: ["中餐", "晚餐"], ingredients: ["白飯300g", "豬肉絲120g", "雞蛋2顆", "蔥20g"], method: "大火熱油炒香肉絲，下蛋液與白飯快速翻炒。" },
-                        { id: 2, name: "火腿蛋餅", tags: ["早餐", "宵夜"], ingredients: ["蛋餅皮1張", "雞蛋1顆", "火腿片1片"], method: "中火將餅皮煎至兩面微黃，倒入蛋液蓋上餅皮。" }
-                    ];
-                    await saveCloudData();
-                }
+// ═══════════════════════════════════════════
+//  UI 開關
+// ═══════════════════════════════════════════
+function handleTimeModeChange() {
+  const m = $('filterTimeMode').value;
+  $('filterMonthGroup').style.display = m === 'month' ? 'block' : 'none';
+  $('filterDaysGroup').style.display  = m === 'days'  ? 'block' : 'none';
+  updateUI();
+}
+function toggleHistoryCollapse() {
+  const w = $('historyListWrapper'), b = $('btnToggleCollapse');
+  b.textContent = w.classList.toggle('collapsed') ? '📁 展開' : '📂 收合';
+}
+function toggleChartsCollapse() {
+  const w = $('chartsWrapper'), b = $('btnToggleCharts');
+  const c = w.classList.toggle('collapsed');
+  b.textContent = c ? '📊 展開圖表' : '📊 收合圖表';
+  if (!c) updateUI();
+}
 
-                renderDishList();
-                initCalendarView();
-                updateSyncStatus('success', '✅ 雲端資料載入完成！');
-            } catch (error) {
-                console.error(error);
-                updateSyncStatus('error', '❌ 無法連線至雲端資料庫，請確認您的 GAS 部署設定。');
-            }
-        }
+// ═══════════════════════════════════════════
+//  主渲染
+// ═══════════════════════════════════════════
+function updateUI() {
+  const selBudgetMonth = $('budgetMonthSelect').value;
+  const bDate = parseDate(selBudgetMonth);
+  const bYear = bDate.getFullYear(), bMon = bDate.getMonth() + 1;
+  const chartStart = parseDate($('analysisStartDate').value);
+  const chartEnd   = parseDate($('analysisEndDate').value);
+  const filterMode  = $('filterTimeMode').value;
+  const filterMonth = $('filterMonthSelect').value;
+  const filterStart = parseDate($('filterStartDate').value);
+  const filterEnd   = parseDate($('filterEndDate').value);
+  const filterCat   = $('filterCategorySelect').value;
+  const kw    = $('searchKeyword').value.trim();
+  const kwLow = kw.toLowerCase();
 
-        async function saveCloudData() {
-            updateSyncStatus('loading', '💾 正在同步更新至 Google 雲端...');
-            try {
-                // 移除 no-cors，改用標準不透明傳輸或處理好跨網域的標準 POST 請求
-                const response = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/text' }, // 用文字載體包裹避開特定預檢限制
-                    body: JSON.stringify({
-                        action: 'saveAll',
-                        dishes: dishDatabase,
-                        schedule: menuSchedule
-                    })
-                });
-                updateSyncStatus('success', '✅ 備料排程已安全存入雲端！');
-            } catch (error) {
-                console.error(error);
-                updateSyncStatus('error', '❌ 儲存至雲端失敗。');
-            }
-        }
+  const balances     = {...accountBalances};
+  const expChart     = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
+  const incChart     = Object.fromEntries(INCOME_CATS.map(k => [k, 0]));
+  const monBudSpent  = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
+  const yearBudSpent = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
+  const grpMonSpent  = Object.fromEntries(Object.keys(customGroupBudgets).map(k => [k, 0]));
+  const grpYrSpent   = Object.fromEntries(Object.keys(customGroupBudgets).map(k => [k, 0]));
+  const assetLine    = {};
+  let totalInc = 0, totalExp = 0;
 
-        // 格式化日期格式為 2026-07-03 的 key 結構，確保年度變更時資料不會錯亂
-        function formatDateKey(dateObj) {
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const d = String(dateObj.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        }
+  [...records].reverse().forEach(r => {
+    r.date = toDateStr(r.date);
+    const rDate = parseDate(r.date);
+    const rYM   = r.date.slice(0, 7);
+    const rYear = parseInt(r.date.slice(0, 4));
+    const rMon  = parseInt(r.date.slice(5, 7));
 
-        // 針對舊系統簡易標記格式 (M/D) 的相容舊資料機制
-        function getScheduleData(dateKey, legacyKey) {
-            if (menuSchedule[dateKey]) return menuSchedule[dateKey];
-            if (menuSchedule[legacyKey]) {
-                menuSchedule[dateKey] = menuSchedule[legacyKey]; // 自動升級舊格式
-                return menuSchedule[dateKey];
-            }
-            return null;
-        }
+    if (r.type === '轉帳') {
+      if (balances[r.fromAccount] !== undefined) balances[r.fromAccount] -= r.amount;
+      if (balances[r.toAccount]   !== undefined) {
+        if (isCreditCard(r.toAccount)) balances[r.toAccount] -= r.amount;
+        else balances[r.toAccount] += r.amount;
+      }
+    } else if (r.type === '收入') {
+      totalInc += r.amount;
+      if (balances[r.account] !== undefined) balances[r.account] += r.amount;
+      if (rDate >= chartStart && rDate <= chartEnd && incChart[r.mainCategory] !== undefined)
+        incChart[r.mainCategory] += r.amount;
+    } else {
+      totalExp += r.amount;
+      if (balances[r.account] !== undefined) {
+        if (isCreditCard(r.account)) balances[r.account] += r.amount;
+        else balances[r.account] -= r.amount;
+      }
+      if (rYM === selBudgetMonth) {
+        if (monBudSpent[r.mainCategory] !== undefined) monBudSpent[r.mainCategory] += r.amount;
+        Object.entries(customGroupBudgets).forEach(([g, cfg]) => { if (cfg.subCats?.includes(r.subCategory)) grpMonSpent[g] = (grpMonSpent[g]||0) + r.amount; });
+      }
+      if (rYear === bYear && rMon <= bMon) {
+        if (yearBudSpent[r.mainCategory] !== undefined) yearBudSpent[r.mainCategory] += r.amount;
+        Object.entries(customGroupBudgets).forEach(([g, cfg]) => { if (cfg.subCats?.includes(r.subCategory)) grpYrSpent[g] = (grpYrSpent[g]||0) + r.amount; });
+      }
+      if (rDate >= chartStart && rDate <= chartEnd && expChart[r.mainCategory] !== undefined)
+        expChart[r.mainCategory] += r.amount;
+    }
+    let tA = 0, tL = 0;
+    ACCOUNT_NAMES.forEach(n => isCreditCard(n) ? tL += (balances[n]||0) : tA += (balances[n]||0));
+    assetLine[r.date] = tA - tL;
+  });
 
-        function parseAndAggregateIngredients(ingredientsArray) {
-            let totals = {};
-            ingredientsArray.forEach(str => {
-                if (!str) return;
-                const match = str.match(/^([^\d\s\.]+)([\d\.]+)?(.*)$/);
-                if (match) {
-                    const name = match[1].trim();
-                    const value = match[2] ? parseFloat(match[2]) : null;
-                    const unit = match[3] ? match[3].trim() : '';
+  // 看板
+  $('totalIncome').textContent  = totalInc.toLocaleString();
+  $('totalExpense').textContent = totalExp.toLocaleString();
+  let totA = 0, totL = 0;
+  ACCOUNT_NAMES.forEach(n => {
+    const v = balances[n] || 0, ve = $(`val-${n}`);
+    if (isCreditCard(n)) {
+      ve.textContent = v > 0 ? `欠 $${v.toLocaleString()}` : '$0';
+      ve.style.color = v > 0 ? 'var(--danger)' : 'var(--text-3)';
+      totL += v;
+    } else {
+      ve.textContent = `$${v.toLocaleString()}`;
+      ve.style.color = v < 0 ? 'var(--danger)' : 'var(--text)';
+      totA += v;
+    }
+  });
+  const net = totA - totL, netEl = $('netBalance');
+  netEl.textContent = `$${net.toLocaleString()}`;
+  netEl.style.color = net < 0 ? '#fca5a5' : 'white';
 
-                    if (value !== null) {
-                        if (!totals[name]) totals[name] = { value: 0, unit: unit };
-                        totals[name].value += value;
-                        if(unit) totals[name].unit = unit; 
-                    } else {
-                        if (!totals[name]) totals[name] = { value: null, unit: unit };
-                    }
-                }
-            });
+  // 明細列表
+  let html = '', count = 0;
+  records.forEach(r => {
+    r.date = toDateStr(r.date);
+    const rDate = parseDate(r.date);
+    const passTime = filterMode === 'month' ? r.date.slice(0,7) === filterMonth : rDate >= filterStart && rDate <= filterEnd;
+    const passCat  = filterCat === 'ALL' ? true : filterCat === '內部轉帳' ? r.type === '轉帳' : r.type !== '轉帳' && r.mainCategory === filterCat;
+    
+    let passKw = true;
+    if (kwLow) {
+      if (r.type === '轉帳') {
+        passKw = [r.note, '轉帳', '內部轉帳', r.fromAccount, r.toAccount].some(f => String(f || '').toLowerCase().includes(kwLow));
+      } else {
+        passKw = [r.note, r.mainCategory, r.subCategory, r.account].some(f => String(f || '').toLowerCase().includes(kwLow));
+      }
+    }
 
-            let resultStrings = [];
-            for (let name in totals) {
-                if (totals[name].value !== null) {
-                    const roundedValue = Math.round(totals[name].value * 100) / 100;
-                    resultStrings.push(`${name} : ${roundedValue} ${totals[name].unit}`);
-                } else {
-                    resultStrings.push(`${name}`);
-                }
-            }
-            return resultStrings;
-        }
+    if (!passTime || !passCat || !passKw) return;
+    count++;
 
-        function updateIngredientsSummary(dateKey, legacyKey) {
-            const panel = document.getElementById('summaryPanel');
-            const title = document.getElementById('summaryTitle');
-            const listContainer = document.getElementById('ingredientsList');
-            
-            // 介面展示用名稱
-            const displayDate = dateKey.substring(5).replace('-', '/');
-            title.innerText = `📊 ${displayDate} 備料清單與食材量化加總`;
-            listContainer.innerHTML = '';
+    const noteHl = highlight(r.note || '', kw);
+    const actions = `<button class="btn-item-action btn-item-edit" onclick="openEditModal(${r.id})" title="編輯">✏️</button>
+                     <button class="btn-item-action btn-item-delete" onclick="deleteRecord(${r.id})" title="刪除">✕</button>`;
 
-            const dayMeals = getScheduleData(dateKey, legacyKey);
-            let allIngredients = [];
-            let hasFood = false;
+    if (r.type === '轉帳') {
+      html += `<div class="history-item">
+        <div class="item-left transfer-border">
+          <div class="item-date">${r.date}</div>
+          <div class="item-title"><span class="item-acc-tag" style="background:#f3f0ff;color:#7048e8">🔄 轉帳</span> ${highlight(r.fromAccount||'', kw)} → ${highlight(r.toAccount||'', kw)}</div>
+          <div class="item-note">${noteHl}</div>
+        </div>
+        <div class="item-right"><div class="item-amount" style="color:var(--purple)">$${r.amount.toLocaleString()}</div>${actions}</div>
+      </div>`;
+    } else {
+      const isInc = r.type === '收入';
+      html += `<div class="history-item">
+        <div class="item-left ${isInc ? 'income-border' : 'expense-border'}">
+          <div class="item-date">${r.date}</div>
+          <div class="item-title"><span class="item-acc-tag">${r.account||''}</span> ${highlight(r.mainCategory||'', kw)}${!isInc && r.subCategory ? `<span class="item-sub-tag">${highlight(r.subCategory, kw)}</span>` : ''}</div>
+          <div class="item-note">${noteHl}</div>
+        </div>
+        <div class="item-right"><div class="item-amount" style="color:${isInc?'var(--success)':'var(--danger)'}">${isInc?'+':'−'}$${r.amount.toLocaleString()}</div>${actions}</div>
+      </div>`;
+    }
+  });
 
-            if (dayMeals) {
-                ['早餐', '中餐', '晚餐', '宵夜', '點心'].forEach(mealType => {
-                    if (dayMeals[mealType] && dayMeals[mealType].length > 0) {
-                        hasFood = true;
-                        dayMeals[mealType].forEach(dishId => {
-                            const dish = dishDatabase.find(d => d.id === dishId);
-                            if (dish && dish.ingredients) {
-                                allIngredients = allIngredients.concat(dish.ingredients);
-                            }
-                        });
-                    }
-                });
-            }
+  $('searchCount').textContent = kw ? `找到 ${count} 筆含「${kw}」的記錄` : (count > 0 ? `共 ${count} 筆` : '');
+  $('recordList').innerHTML = count === 0
+    ? `<p style="text-align:center;color:var(--text-3);font-size:13px;padding:24px 0">${kw ? `找不到含「${kw}」的記錄` : '此期間無記錄'}</p>`
+    : html;
 
-            if (!hasFood) {
-                listContainer.innerHTML = '<li>今天此日無排餐，無需備料！</li>';
-                panel.style.display = 'block';
-                return;
-            }
+  // 預算
+  const budgetEl = $('budgetListSection'); budgetEl.innerHTML = '';
+  let hasAny = false, sumB = 0, sumS = 0, sumYB = 0, sumYS = 0;
 
-            let aggregatedIngredients = parseAndAggregateIngredients(allIngredients);
+  for (const cat in budgets) {
+    hasAny = true;
+    const limit = budgets[cat], spent = monBudSpent[cat]||0, rem = limit - spent;
+    const yLimit = limit * bMon, ySpent = yearBudSpent[cat]||0;
+    sumB += limit; sumS += spent; sumYB += yLimit; sumYS += ySpent;
+    const pct = limit > 0 ? Math.min((spent/limit)*100, 100) : 0, over = spent > limit;
+    budgetEl.insertAdjacentHTML('beforeend', `<div class="budget-item">
+      <div class="budget-info"><span>🏷️ <strong>${cat}</strong></span>
+        <div class="budget-action-btns">
+          <span style="color:${over?'var(--danger)':'var(--success)'};font-weight:700;font-size:11px">${over?'超 $'+Math.abs(rem).toLocaleString():'餘 $'+rem.toLocaleString()}</span>
+          <button class="btn-budget-edit" onclick="editBudgetAmount('${cat}',${limit})">✏️</button>
+          <button class="btn-budget-delete" onclick="deleteBudget('${cat}')">✕</button>
+        </div>
+      </div>
+      <div style="color:var(--text-3);font-size:10px;margin-bottom:3px">已花 $${spent.toLocaleString()} / 預算 $${limit.toLocaleString()}</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill${over?' progress-over':''}" style="width:${pct}%"></div></div>
+    </div>`);
+  }
 
-            if(aggregatedIngredients.length === 0) {
-                listContainer.innerHTML = '<li>所選菜色未設定材料。</li>';
-            } else {
-                aggregatedIngredients.forEach(ing => {
-                    const li = document.createElement('li');
-                    li.className = 'ingredient-tag';
-                    li.innerText = ing;
-                    listContainer.appendChild(li);
-                });
-            }
-            panel.style.display = 'block';
-        }
+  for (const gn in customGroupBudgets) {
+    hasAny = true;
+    const g = customGroupBudgets[gn], limit = g.limit, spent = grpMonSpent[gn]||0, rem = limit - spent;
+    const yLimit = limit * bMon, ySpent = grpYrSpent[gn]||0;
+    sumB += limit; sumS += spent; sumYB += yLimit; sumYS += ySpent;
+    const pct = limit > 0 ? Math.min((spent/limit)*100, 100) : 0;
+    const yPct = yLimit > 0 ? Math.min((ySpent/yLimit)*100, 100) : 0;
+    const over = spent > limit, yOver = ySpent > yLimit;
+    budgetEl.insertAdjacentHTML('beforeend', `<div class="budget-item custom-budget-item">
+      <div class="budget-info"><span style="color:var(--primary)">🧩 <strong>${gn}</strong></span>
+        <div class="budget-action-btns">
+          <span style="color:${over?'var(--danger)':'var(--success)'};font-weight:700;font-size:11px">${over?'超 $'+Math.abs(rem).toLocaleString():'餘 $'+rem.toLocaleString()}</span>
+          <button class="btn-budget-edit" onclick="editCustomGroupAmount('${gn}',${limit})">✏️</button>
+          <button class="btn-budget-delete" onclick="deleteCustomGroupBudget('${gn}')">✕</button>
+        </div>
+      </div>
+      <div style="color:var(--text-2);font-size:10px;margin-bottom:2px">包含: ${g.subCats?g.subCats.join(', '):''}</div>
+      <div style="color:var(--text-3);font-size:10px">當月 $${spent.toLocaleString()} / $${limit.toLocaleString()}</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill${over?' progress-over':''}" style="width:${pct}%"></div></div>
+      <div style="color:var(--text-3);font-size:10px;margin-top:3px">年度 $${ySpent.toLocaleString()} / $${yLimit.toLocaleString()}</div>
+      <div class="progress-bar-bg year-bg"><div class="progress-bar-fill year-fill${yOver?' progress-over':''}" style="width:${yPct}%"></div></div>
+    </div>`);
+  }
 
-        function renderDishList() {
-            const container = document.getElementById('dishList');
-            container.innerHTML = '';
-            const filtered = dishDatabase.filter(d => currentFilter === '全部' || d.tags.includes(currentFilter));
+  const bs = $('budgetSummaryBox');
+  if (hasAny) {
+    bs.style.display = 'flex';
+    $('sumTotalBudget').textContent = `$${sumB.toLocaleString()}`;
+    $('sumTotalSpent').textContent  = `$${sumS.toLocaleString()}`;
+    const tr = sumB - sumS, trEl = $('sumTotalRemaining');
+    trEl.textContent = tr >= 0 ? `$${tr.toLocaleString()}` : `超 $${Math.abs(tr).toLocaleString()}`;
+    trEl.style.color = tr >= 0 ? 'var(--success)' : 'var(--danger)';
+    $('yearTotalBudget').textContent = `$${sumYB.toLocaleString()}`;
+    $('yearTotalSpent').textContent  = `$${sumYS.toLocaleString()}`;
+    const yr = sumYB - sumYS, yrEl = $('yearTotalRemaining');
+    yrEl.textContent = yr >= 0 ? `$${yr.toLocaleString()}` : `超 $${Math.abs(yr).toLocaleString()}`;
+    yrEl.style.color = yr >= 0 ? 'var(--success)' : 'var(--danger)';
+  } else {
+    bs.style.display = 'none';
+    budgetEl.innerHTML = `<p style="color:var(--text-3);text-align:center;font-size:12px;padding:8px 0">尚未設定任何預算項目</p>`;
+  }
 
-            filtered.forEach(dish => {
-                const item = document.createElement('div');
-                item.className = 'dish-item';
-                item.setAttribute('draggable', 'true');
-                item.innerHTML = `
-                    <span onclick="showCookingMethod(${dish.id})" style="flex-grow: 1; cursor: pointer;">${dish.name}</span>
-                    <div class="action-icons">
-                        <span class="action-btn edit" onclick="editDish(${dish.id})" title="編輯">✏️</span>
-                        <span class="action-btn delete" onclick="deleteDishFromDatabase(${dish.id})" title="刪除">🗑️</span>
-                    </div>
-                `;
-                item.ondragstart = (e) => { e.dataTransfer.setData('text/plain', dish.id); };
-                container.appendChild(item);
-            });
-        }
+  if (!$('chartsWrapper').classList.contains('collapsed'))
+    renderCharts(chartStart, chartEnd, expChart, incChart, assetLine);
+}
 
-        async function deleteDishFromDatabase(id) {
-            const dish = dishDatabase.find(d => d.id === id);
-            if (!dish) return;
+// ═══════════════════════════════════════════
+//  圖表
+// ═══════════════════════════════════════════
+function renderCharts(start, end, expMap, incMap, assetLine) {
+  const totalExp = Object.values(expMap).reduce((a,b)=>a+b,0);
+  const expLabels = Object.keys(expMap).filter(k=>expMap[k]>0).map(k=>`${k} ($${expMap[k].toLocaleString()})`);
+  const expVals   = Object.keys(expMap).filter(k=>expMap[k]>0).map(k=>expMap[k]);
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart($('expensePieChart').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: expLabels, datasets: [{ data: expVals, backgroundColor: ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#1abc9c','#e67e22','#34495e','#95a5a6','#d35400','#c0392b','#7f8c8d'], borderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 9, font: { size: 9 } } } } },
+    plugins: [{ id: 'cp', beforeDraw(chart) {
+      const ctx = chart.ctx, cx = (chart.chartArea.left+chart.chartArea.right)/2, cy = (chart.chartArea.top+chart.chartArea.bottom)/2;
+      ctx.restore(); ctx.font = 'bold 10px sans-serif'; ctx.fillStyle = '#718096'; ctx.textBaseline = 'middle';
+      const t1 = '總支出'; ctx.fillText(t1, cx - ctx.measureText(t1).width/2, cy-9);
+      ctx.font = 'bold 14px sans-serif'; ctx.fillStyle = '#e74c3c';
+      const t2 = `$${totalExp.toLocaleString()}`; ctx.fillText(t2, cx - ctx.measureText(t2).width/2, cy+9);
+      ctx.save();
+    }}]
+  });
 
-            if (confirm(`確定要從菜色庫中刪除「${dish.name}」嗎？\n這將會同步移除日曆中所有已排定此菜色的行程！`)) {
-                dishDatabase = dishDatabase.filter(d => d.id !== id);
+  const incLabels = Object.keys(incMap).filter(k=>incMap[k]>0), incVals = incLabels.map(k=>incMap[k]);
+  if (barChart) barChart.destroy();
+  barChart = new Chart($('incomeBarChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: incLabels, datasets: [{ label: '進帳', data: incVals, backgroundColor: '#2f9e44', borderRadius: 5 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
 
-                for (let dateKey in menuSchedule) {
-                    for (let mealType in menuSchedule[dateKey]) {
-                        if (Array.isArray(menuSchedule[dateKey][mealType])) {
-                            menuSchedule[dateKey][mealType] = menuSchedule[dateKey][mealType].filter(dishId => dishId !== id);
-                        }
-                    }
-                }
+  let tlMap = {}; let cur = new Date(start);
+  while (cur <= end) { tlMap[cur.toISOString().slice(0,10)] = 0; cur.setDate(cur.getDate()+1); }
+  Object.keys(tlMap).forEach(d => {
+    if (assetLine[d] !== undefined) { tlMap[d] = assetLine[d]; return; }
+    let fb = 0; Object.keys(assetLine).forEach(t => { if (parseDate(t) <= parseDate(d)) fb = assetLine[t]; });
+    tlMap[d] = fb;
+  });
+  const ll = Object.keys(tlMap).sort(), lv = ll.map(d=>tlMap[d]);
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart($('assetLineChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: ll, datasets: [{ label: '資產淨值', data: lv, borderColor: '#3b5bdb', backgroundColor: 'rgba(59,91,219,.05)', tension: 0.2, fill: true, borderWidth: 2, pointRadius: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+}
 
-                const editId = document.getElementById('editDishId').value;
-                if (editId == id) clearForm();
+// ═══════════════════════════════════════════
+//  啟動
+// ═══════════════════════════════════════════
+(function init() {
+  const today = new Date(), ts = today.toISOString().slice(0,10);
+  const yr = today.getFullYear(), mo = String(today.getMonth()+1).padStart(2,'0');
+  $('analysisStartDate').value = `${yr}-${mo}-01`;
+  $('analysisEndDate').value   = ts;
+  $('filterStartDate').value   = `${yr}-${mo}-01`;
+  $('filterEndDate').value     = ts;
 
-                const methodPanel = document.getElementById('methodPanel');
-                if (methodPanel.style.display === 'block') methodPanel.style.display = 'none';
+  initAccountUI();
+  initSelects();
+  initMonthSelects();
+  initFilterCats();
+  initCustomGroupSubCats();
 
-                renderDishList();
-                renderCalendar();
-                if (selectedDateKey) updateIngredientsSummary(selectedDateKey);
-                
-                await saveCloudData();
-            }
-        }
+  // 初始化新增第一行多筆輸入列
+  addBatchRow();
 
-        function filterDishes(tag, button) {
-            currentFilter = tag;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            button.classList.add('active');
-            renderDishList();
-        }
+  // 搜尋框事件監聽器
+  $('searchKeyword').addEventListener('input', updateUI);
 
-        function showCookingMethod(id) {
-            const dish = dishDatabase.find(d => d.id === id);
-            if (!dish) return;
-            document.getElementById('methodPanel').style.display = 'block';
-            document.getElementById('methodDishName').innerText = `🍳 ${dish.name} - 烹飪配方`;
-            document.getElementById('methodContent').innerText = `【材料】\n${dish.ingredients.join('\n')}\n\n【做法】\n${dish.method || "暫無說明。"}`;
-        }
+  // 監聽 ESC 鍵關閉 Modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEditModal();
+  });
 
-        function editDish(id) {
-            const dish = dishDatabase.find(d => d.id === id);
-            if (!dish) return;
-
-            document.getElementById('formTitle').innerText = "📝 編輯菜色內容";
-            document.getElementById('editDishId').value = dish.id;
-            document.getElementById('dishName').value = dish.name;
-            document.getElementById('dishIngredients').value = dish.ingredients.join(', ');
-            document.getElementById('dishMethod').value = dish.method;
-
-            document.querySelectorAll('input[name="tags"]').forEach(cb => {
-                cb.checked = dish.tags.includes(cb.value);
-            });
-
-            document.getElementById('btnSubmit').innerText = "更新菜色配方";
-            document.getElementById('btnCancel').style.display = "block";
-        }
-
-        async function saveDish() {
-            const idVal = document.getElementById('editDishId').value;
-            const name = document.getElementById('dishName').value.trim();
-            const ingredientsInput = document.getElementById('dishIngredients').value;
-            const method = document.getElementById('dishMethod').value.trim();
-            
-            const checkboxes = document.querySelectorAll('input[name="tags"]:checked');
-            let tags = [];
-            checkboxes.forEach(cb => tags.push(cb.value));
-
-            if (!name) { alert('請輸入菜色名稱！'); return; }
-            const ingredients = ingredientsInput.split(',').map(i => i.trim()).filter(i => i !== "");
-
-            if (idVal) {
-                const dish = dishDatabase.find(d => d.id === parseInt(idVal));
-                if (dish) {
-                    dish.name = name; dish.tags = tags; dish.ingredients = ingredients; dish.method = method;
-                }
-            } else {
-                dishDatabase.push({ id: Date.now(), name, tags, ingredients, method });
-            }
-
-            clearForm();
-            renderDishList();
-            renderCalendar();
-            if (selectedDateKey) updateIngredientsSummary(selectedDateKey);
-            
-            await saveCloudData();
-        }
-
-        function clearForm() {
-            document.getElementById('formTitle').innerText = "新增自訂菜色";
-            document.getElementById('editDishId').value = "";
-            document.getElementById('dishName').value = "";
-            document.getElementById('dishIngredients').value = "";
-            document.getElementById('dishMethod').value = "";
-            document.querySelectorAll('input[name="tags"]').forEach(cb => cb.checked = false);
-            document.getElementById('btnSubmit').innerText = "加入菜色庫";
-            document.getElementById('btnCancel').style.display = "none";
-        }
-
-        // 時間導航控制
-        function changeWeek(daysOffset) {
-            calendarAnchorDate.setDate(calendarAnchorDate.getDate() + daysOffset);
-            renderCalendar();
-        }
-
-        function goToday() {
-            calendarAnchorDate = new Date();
-            initCalendarView();
-        }
-
-        function initCalendarView() {
-            const today = new Date();
-            selectedDateKey = formatDateKey(today);
-            renderCalendar();
-            updateIngredientsSummary(selectedDateKey, `${today.getMonth()+1}/${today.getDate()}`);
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-            
-            // 計算目前雙週顯示的起始星期一
-            const startDate = new Date(calendarAnchorDate);
-            const currentDay = startDate.getDay();
-            const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay; 
-            startDate.setDate(startDate.getDate() + diffToMonday);
-            
-            const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 13);
-            
-            // 更新畫面上目前顯示的時間範圍文字
-            document.getElementById('currentRangeDisplay').innerText = 
-                `📅 目前區間：${startDate.getFullYear()}/${startDate.getMonth()+1}/${startDate.getDate()} ～ ${endDate.getMonth()+1}/${endDate.getDate()}`;
-
-            const mealTypes = ['早餐', '中餐', '晚餐', '宵夜', '點心'];
-            const todayStr = formatDateKey(new Date());
-
-            // 連續算 14 天
-            for (let i = 0; i < 14; i++) {
-                const targetDate = new Date(startDate);
-                targetDate.setDate(startDate.getDate() + i);
-                
-                const dateKey = formatDateKey(targetDate);
-                const legacyKey = `${targetDate.getMonth() + 1}/${targetDate.getDate()}`;
-                
-                const isToday = dateKey === todayStr ? 'today' : '';
-                const card = document.createElement('div');
-                card.className = `day-card ${isToday}`;
-                if(dateKey === selectedDateKey) card.classList.add('active-select');
-                
-                card.onclick = () => {
-                    selectedDateKey = dateKey;
-                    document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active-select'));
-                    card.classList.add('active-select');
-                    updateIngredientsSummary(dateKey, legacyKey);
-                };
-
-                let todayBadge = dateKey === todayStr ? '<span class="badge">今天</span>' : '';
-                card.innerHTML = `<div class="day-title"><span>${targetDate.getMonth()+1}/${targetDate.getDate()}</span>${todayBadge}</div>`;
-                
-                // 初始化該日期的結構結構
-                if (!menuSchedule[dateKey]) {
-                    // 若有舊資料結構，予以繼承，否則建全新物件
-                    if(menuSchedule[legacyKey]) {
-                        menuSchedule[dateKey] = menuSchedule[legacyKey];
-                    } else {
-                        menuSchedule[dateKey] = { 早餐: [], 中餐: [], 晚餐: [], 宵夜: [], 點心: [] };
-                    }
-                }
-
-                mealTypes.forEach(mealType => {
-                    const slot = document.createElement('div');
-                    slot.className = 'meal-slot';
-                    slot.innerHTML = `<div class="meal-slot-title">${mealType}</div>`;
-                    
-                    slot.ondragover = (e) => { e.preventDefault(); slot.classList.add('drag-over'); };
-                    slot.ondragleave = () => slot.classList.remove('drag-over');
-                    slot.ondrop = async (e) => {
-                        e.preventDefault();
-                        slot.classList.remove('drag-over');
-                        const dishId = parseInt(e.dataTransfer.getData('text/plain'));
-                        
-                        if (!menuSchedule[dateKey][mealType].includes(dishId)) {
-                            menuSchedule[dateKey][mealType].push(dishId);
-                            renderCalendar();
-                            if (dateKey === selectedDateKey) updateIngredientsSummary(dateKey, legacyKey);
-                            await saveCloudData(); 
-                        }
-                    };
-
-                    const dishIds = menuSchedule[dateKey][mealType] || [];
-                    dishIds.forEach(dishId => {
-                        const dish = dishDatabase.find(d => d.id === dishId);
-                        if (dish) {
-                            const dishEl = document.createElement('div');
-                            dishEl.className = 'placed-dish';
-                            dishEl.innerHTML = `
-                                <span onclick="event.stopPropagation(); showCookingMethod(${dish.id})">${dish.name}</span>
-                                <span class="remove-btn" onclick="event.stopPropagation(); removeDishFromSchedule('${dateKey}', '${mealType}', ${dish.id})">×</span>
-                            `;
-                            slot.appendChild(dishEl);
-                        }
-                    });
-                    card.appendChild(slot);
-                });
-                grid.appendChild(card);
-            }
-        }
-
-        async function removeDishFromSchedule(dateKey, mealType, dishId) {
-            if(menuSchedule[dateKey] && menuSchedule[dateKey][mealType]) {
-                menuSchedule[dateKey][mealType] = menuSchedule[dateKey][mealType].filter(id => id !== dishId);
-                renderCalendar();
-                if (dateKey === selectedDateKey) updateIngredientsSummary(dateKey, `${parseInt(dateKey.split('-')[1])}/${parseInt(dateKey.split('-')[2])}`);
-                await saveCloudData(); 
-            }
-        }
-
-        window.onload = () => {
-            loadCloudData();
-        };
-    </script>
+  fetchCloudData();
+})();
+</script>
 </body>
 </html>
