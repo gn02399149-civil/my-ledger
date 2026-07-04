@@ -27,7 +27,125 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
 .sidebar{background:var(--surface);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);flex:0.65;display:flex;flex-direction:column;gap:20px;min-width:260px;max-width:360px}
 .app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .app-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
-.cloud-status-bar{display:flex;align-items:center;gap:6px;background:var(--primary-light);border:1px solid #c5d0fa;color:var(--primary);padding:5px 10px;border-radius:20px;font-size:12px;font-weig[...続く]
+.cloud-status-bar{display:flex;align-items:center;gap:6px;background:var(--primary-light);border:1px solid #c5d0fa;color:var(--primary);padding:5px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--primary)}
+.sync-dot.spinning{background:transparent;border:2px solid var(--primary);border-top-color:transparent;animation:spin .8s linear infinite;width:10px;height:10px}
+.dashboard{background:linear-gradient(135deg,#1e3a8a,#1d4ed8 60%,#3b82f6);color:#fff;padding:18px 20px;border-radius:12px;margin-bottom:16px}
+.balance-title{font-size:11px;color:rgba(255,255,255,.6);text-align:center;letter-spacing:.8px;text-transform:uppercase}
+.balance-amount{font-size:32px;font-weight:700;text-align:center;margin:4px 0 14px;letter-spacing:-1px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px solid rgba(255,255,255,.15);padding-top:12px}
+.step-box{text-align:center}
+.stat-label{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.4px}
+.stat-value{font-size:15px;font-weight:700;margin-top:2px}
+.text-income{color:#6ee7b7}.text-expense{color:#fca5a5}
+.section-title{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.section-title::before{content:'';display:block;width:3px;height:14px;background:var(--primary);border-radius:2px}
+.batch-container{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;overflow-x:auto}
+.batch-row{display:flex;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;align-items:center;min-width:850px}
+.batch-cell{display:flex;flex-direction:column;gap:3px}
+.batch-cell label{font-size:10px;color:var(--text-2);font-weight:600}
+.batch-cell input,.batch-cell select{padding:5px 8px;font-size:12px;height:30px;border-radius:5px}
+.btn-remove-row{background:var(--danger-light);color:var(--danger);border:1px solid #ffc9c9;width:30px;height:30px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-remove-row:hover{background:var(--danger);color:#fff}
+.batch-actions{display:flex;gap:10px;margin-bottom:20px}
+.form-group{margin-bottom:10px}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1;margin-bottom:0}
+label{display:block;margin-bottom:4px;color:var(--text-2);font-weight:600;font-size:11px;letter-spacing:.3px}
+input,select{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text);transition:border-color var(--tr),box-shadow var(--tr)}
+input:focus,select:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(59,91,219,.1)}
+button{padding:7px 14px;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all var(--tr);font-family:inherit}
+.btn-primary{background:var(--primary);width:100%;padding:11px;font-size:14px;margin-top:4px}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,91,219,.3)}
+.btn-sm{font-size:11px;padding:3px 8px}
+.btn-ghost{background:var(--surface2);color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border);color:var(--text)}
+.btn-success{background:var(--success)}.btn-success:hover{background:#267a38}
+.btn-danger{background:var(--danger)}.btn-danger:hover{background:#c02222}
+.btn-dark{background:#2d3748}.btn-dark:hover{background:#1a202c}
+.btn-backup{font-size:12px;width:100%;padding:9px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-toggle-view{background:var(--surface2);color:var(--text-2);border:1px solid var(--border);font-size:11px;padding:4px 9px}
+.btn-toggle-view:hover{background:var(--border)}
+.shortcut-hint{font-size:10px;color:var(--text-3);margin-top:4px;text-align:right}
+kbd{display:inline-block;padding:1px 4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;font-size:10px;font-family:inherit;color:var(--text-2);font-weight:600}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.account-card{background:var(--surface2);border:1.5px solid var(--border);padding:8px 10px;border-radius:8px;display:flex;flex-direction:column}
+.account-card.credit{border-left:3px solid var(--danger)}
+.account-card.asset{border-left:3px solid var(--success)}
+.account-name{font-size:11px;font-weight:700;color:var(--text-2)}
+.account-val{font-size:14px;font-weight:700;margin:2px 0}
+.account-input-group{display:flex;gap:4px;margin-top:4px}
+.account-input-group input{padding:3px 5px;font-size:11px;height:22px}
+.account-input-group button{font-size:10px;padding:2px 6px;background:var(--primary)}
+.history-controls{background:var(--surface2);padding:10px 12px;border-radius:9px;border:1px solid var(--border);margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
+.control-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.control-item{flex:1;min-width:130px}
+.control-item label{font-size:11px;margin-bottom:2px}
+.control-item select,.control-item input{padding:5px 8px;font-size:12px}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:28px}
+.search-icon{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.4;pointer-events:none}
+.search-count{font-size:10px;color:var(--text-3);margin-top:3px;min-height:14px}
+.history-list-wrapper{max-height:420px;overflow-y:auto;padding-right:2px}
+.history-list-wrapper.collapsed{display:none}
+.history-list-wrapper::-webkit-scrollbar{width:5px}
+.history-list-wrapper::-webkit-scrollbar-track{background:var(--surface2);border-radius:10px}
+.history-list-wrapper::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}
+.history-item{background:var(--surface);padding:9px 12px;border:1px solid var(--border);margin-bottom:6px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;transition:all var(--tr)}
+.history-item:hover{box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.item-left{border-left:3px solid #cbd5e1;padding-left:9px;min-width:0;flex:1}
+.item-left.income-border{border-left-color:var(--success)}
+.item-left.expense-border{border-left-color:var(--danger)}
+.item-left.transfer-border{border-left-color:var(--purple)}
+.item-date{font-size:10px;color:var(--text-3);font-weight:600}
+.item-title{font-weight:600;color:var(--text);font-size:13px;margin:2px 0;display:flex;align-items:center;flex-wrap:wrap;gap:3px}
+.item-note{font-size:11px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.item-acc-tag{display:inline-flex;align-items:center;background:#eef2ff;color:#3b5bdb;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:700}
+.item-sub-tag{display:inline-flex;align-items:center;background:var(--surface2);color:var(--text-3);font-size:10px;padding:1px 5px;border-radius:4px}
+.item-right{display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px}
+.item-amount{font-weight:700;font-size:14px;white-space:nowrap}
+.highlight{background:#fff3bf;border-radius:2px;padding:0 1px}
+.btn-item-action{background:none;color:var(--text-3);border:1px solid var(--border);padding:2px 6px;cursor:pointer;font-size:11px;border-radius:5px;transition:all var(--tr)}
+.btn-item-edit:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-light)}
+.btn-item-delete:hover{color:var(--danger);border-color:var(--danger);background:var(--danger-light)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--surface);border-radius:12px;padding:24px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-title{font-size:16px;font-weight:700;margin:0 0 16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;color:var(--text-3);border:none;font-size:20px;padding:0;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-footer{display:flex;gap:8px;margin-top:16px}
+.modal-footer button{flex:1}
+.budget-item{margin-bottom:8px;background:var(--surface);padding:9px 10px;border-radius:8px;border:1px solid var(--border)}
+.budget-info{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;align-items:center}
+.progress-bar-bg{background:var(--border);border-radius:4px;height:5px;overflow:hidden;margin-bottom:2px}
+.progress-bar-bg.year-bg{height:3px;margin-top:3px}
+.progress-bar-fill{background:var(--primary);height:100%;width:0;transition:width .4s ease}
+.progress-bar-fill.year-fill{background:var(--warning)}
+.progress-over{background:var(--danger)!important}
+.budget-action-btns{display:flex;gap:3px;align-items:center}
+.btn-budget-edit,.btn-budget-delete{background:none;color:var(--text-3);border:none;padding:2px 4px;cursor:pointer;font-size:11px;border-radius:4px}
+.btn-budget-edit:hover{color:var(--primary);background:var(--primary-light)}
+.btn-budget-delete:hover{color:var(--danger);background:var(--danger-light)}
+.budget-summary-box{background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:10px;margin-bottom:10px;display:flex;flex-direction:column;gap:5px}
+.budget-summary-row{display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:4px;align-items:center}
+.budget-summary-row.header{border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:2px}
+.budget-summary-title{font-size:11px;font-weight:700;color:var(--text-2)}
+.budget-summary-label{font-size:10px;color:var(--text-3);font-weight:600;text-align:center}
+.budget-summary-val{font-size:12px;font-weight:700;text-align:center}
+.analysis-section{background:var(--surface2);padding:14px 16px;border-radius:10px;border:1px solid var(--border);margin-top:16px}
+.analysis-header{display:flex;justify-content:space-between;align-items:center}
+.charts-wrapper{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.charts-wrapper.collapsed{display:none}
+.chart-box-standalone{background:var(--surface);padding:12px 14px;border-radius:8px;border:1px solid var(--border);height:240px;position:relative}
+.chart-box-standalone h4{margin:0 0 6px;color:var(--text-2);font-size:11px;text-align:center;font-weight:600}
+.custom-budget-zone{background:#f0f7ff;padding:10px 12px;border-radius:8px;border:1px solid #c3dafe;margin-top:10px}
+.custom-budget-zone h4{margin:0 0 8px;color:#2b6cb0;font-size:12px}
+.custom-budget-item{border-left:3px solid var(--primary)}
+.backup-zone{display:flex;flex-direction:column;gap:5px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1f36;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;opacity:0;transition:all .3s ease}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:900px){body{padding:10px}.main-layout{flex-direction:column}.sidebar{max-width:100%}.form-row{flex-direction:column;gap:8px}.form-row .form-group{flex:none}.balance-amount{font-size:24px}}
+@media(max-width:500px){.batch-row{min-width:100%;overflow-x:auto}.type-tabs{flex-wrap:wrap}.type-tab{flex:1 1 calc(50% - 3px)}.history-list-wrapper{max-height:300px}.chart-box-standalone{height:200px}}
 </style>
 </head>
 <body>
@@ -39,11 +157,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
     <div class="modal-title">✏️ 編輯記帳明細 <button class="modal-close" onclick="closeEditModal()">✕</button></div>
     <input type="hidden" id="editRecordId">
     <div class="form-row" style="margin-bottom:10px">
-      <div class="form-group"><label>交易類型</label>
-        <select id="editType" onchange="handleEditTypeChange()">
-          <option value="支出">支出 💸</option><option value="收入">收入 💰</option><option value="轉帳">轉帳 🔄</option>
-        </select>
-      </div>
+      <div class="form-group"><label>交易類型</label><select id="editType" onchange="handleEditTypeChange()"><option value="支出">支出 💸</option><option value="收入">收入 💰</option><option value="轉帳">轉帳 🔄</option></select></div>
       <div class="form-group"><label>交易日期</label><input type="date" id="editDate"></div>
     </div>
     <div class="form-group" id="editNormalAccGroup"><label>交易帳戶</label><select id="editAccount"></select></div>
@@ -82,11 +196,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
     </div>
   </div>
 
-  <!-- 多筆記帳動態輸入區 -->
   <div class="section-title">批次新增記帳</div>
-  <div id="batchInputContainer" class="batch-container">
-    <!-- 動態生成輸入列 -->
-  </div>
+  <div id="batchInputContainer" class="batch-container"></div>
   <div class="batch-actions">
     <button class="btn-ghost btn-sm" onclick="addBatchRow()">➕ 增加一筆</button>
   </div>
@@ -108,6 +219,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
       <div class="chart-box-standalone"><h4>資產淨值走勢 📈</h4><canvas id="assetLineChart"></canvas></div>
     </div>
   </div>
+  
   <div style="margin-top:18px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="section-title" style="margin-bottom:0">歷史明細</div>
@@ -132,18 +244,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
             <div class="form-group" style="margin:0;flex:1"><label>結束</label><input type="date" id="filterEndDate" onchange="updateUI()"></div>
           </div>
         </div>
-        <div class="control-item">
-          <label>篩選分類</label>
-          <select id="filterCategorySelect" onchange="updateUI()"><option value="ALL">全部</option></select>
-        </div>
+        <div class="control-item"><label>篩選分類</label><select id="filterCategorySelect" onchange="updateUI()"><option value="ALL">全部</option></select></div>
       </div>
       <div class="control-row">
         <div class="control-item" style="flex:1">
           <label>🔍 搜索備註 / 分類</label>
-          <div class="search-wrap">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchKeyword" placeholder="輸入關鍵字即時搜索…" autocomplete="off">
-          </div>
+          <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="searchKeyword" placeholder="輸入關鍵字即時搜索…" autocomplete="off"></div>
           <div class="search-count" id="searchCount"></div>
         </div>
       </div>
@@ -151,6 +257,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
     <div class="history-list-wrapper" id="historyListWrapper"><div id="recordList"></div></div>
   </div>
 </div>
+
 <div class="sidebar">
   <div>
     <div class="section-title">備份與導出</div>
@@ -178,12 +285,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
     </div>
     <div class="custom-budget-zone">
       <h4>🧩 自訂小項預算群組</h4>
-      <div class="form-group"><label style="font-size:11px">群組名稱</label><input type="text" id="customGroupName" placeholder="如：日常餐飲" style="padding:5px;font-size:12px;margin-b[...]
-      <div class="form-group"><label style="font-size:11px">挑選小項（Ctrl 多選）</label><select id="customGroupSubCats" multiple style="height:80px;font-size:11px;padding:4px"></select><[...]
+      <div class="form-group"><label style="font-size:11px">群組名稱</label><input type="text" id="customGroupName" placeholder="如：日常餐飲" style="padding:5px;font-size:12px;margin-bottom:8px"></div>
+      <div class="form-group"><label style="font-size:11px">挑選小項（Ctrl 多選）</label><select id="customGroupSubCats" multiple style="height:80px;font-size:11px;padding:4px;margin-bottom:8px"></select></div>
       <div class="form-group"><label style="font-size:11px">每月預算上限</label>
         <div style="display:flex;gap:4px">
-          <input type="number" id="customGroupAmount" placeholder="金額" style="padding:5px;font-size:12px;height:28px">
-          <button style="background:var(--primary);font-size:11px;padding:3px 8px" onclick="saveCustomGroupBudget()">建立</button>
+          <input type="number" id="customGroupAmount" placeholder="金額" style="padding:5px;font-size:12px;height:28px;flex:1">
+          <button style="background:var(--primary);font-size:11px;padding:3px 8px;flex:0" onclick="saveCustomGroupBudget()">建立</button>
         </div>
       </div>
     </div>
@@ -191,115 +298,46 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);margin:0;
     <div class="budget-summary-box" id="budgetSummaryBox" style="display:none">
       <div class="budget-summary-row header">
         <span class="budget-summary-title" style="color:var(--text-3);font-size:10px">範疇</span>
-        <span class="budget-summary-label">總預算</span>
-        <span class="budget-summary-label">已花費</span>
-        <span class="budget-summary-label">剩餘</span>
+        <span class="budget-summary-label">總預算</span><span class="budget-summary-label">已花費</span><span class="budget-summary-label">剩餘</span>
       </div>
       <div class="budget-summary-row">
-        <span class="budget-summary-title">🌙 當月</span>
-        <span class="budget-summary-val" id="sumTotalBudget">$0</span>
-        <span class="budget-summary-val" id="sumTotalSpent" style="color:var(--danger)">$0</span>
-        <span class="budget-summary-val" id="sumTotalRemaining" style="color:var(--success)">$0</span>
+        <span class="budget-summary-title">🌙 當月</span><span class="budget-summary-val" id="sumTotalBudget">$0</span><span class="budget-summary-val" id="sumTotalSpent" style="color:var(--danger)">$0</span><span class="budget-summary-val" id="sumTotalRemaining" style="color:var(--success)">$0</span>
       </div>
       <div class="budget-summary-row" style="border-top:1px dashed var(--border);padding-top:4px">
-        <span class="budget-summary-title">🗓️ 年度</span>
-        <span class="budget-summary-val" id="yearTotalBudget">$0</span>
-        <span class="budget-summary-val" id="yearTotalSpent" style="color:var(--danger)">$0</span>
-        <span class="budget-summary-val" id="yearTotalRemaining" style="color:var(--success)">$0</span>
+        <span class="budget-summary-title">🗓️ 年度</span><span class="budget-summary-val" id="yearTotalBudget">$0</span><span class="budget-summary-val" id="yearTotalSpent" style="color:var(--danger)">$0</span><span class="budget-summary-val" id="yearTotalRemaining" style="color:var(--success)">$0</span>
       </div>
     </div>
     <div id="budgetListSection"></div>
   </div>
 </div>
 </div>
+
 <script>
-// ═══════════════════════════════════════════
-//  常數
-// ═══════════════════════════════════════════
 const CLOUD_URL = "https://script.google.com/macros/s/AKfycbwtS-XCaLW48NLfV7xsZDbgJ5ptJ_2QjoQzAiDkJCQIWZUJ6MGuf3tmoYJT2f4qmd6Y/exec";
 const LS = { records:'sl_records', budgets:'sl_budgets', groups:'sl_groups', accounts:'sl_accounts' };
 const ACCOUNT_NAMES = ['現金','台灣銀行','newnewbank','郵局','二信','永豐','玉山信用卡','永豐信用卡','台新信用卡','富邦'];
-const EXPENSE_DATA = {
-  '餐飲食品':['早餐','午餐','晚餐','宵夜','飲料','點心零嘴','食材','水果'],
-  '服飾美容':['衣服褲子','配件','鞋子','剪髮','保養品'],
-  '居家生活':['傢俱','家電','房租','水費','電費','瓦斯費','網路費','電話費','保險費','稅務','阿曦','阿霄','訂閱支出','寶貝寵物','洗衣費用','生活用品'],
-  '運輸交通':['計程車','高鐵','飛機','火車','船費','過路費','公車'],
-  '教育學習':['文具','書籍','學貸','補習費'],
-  '休閒娛樂':['電影','KTV','玩具小物','旅行遊玩','遊戲','彩券','運動健身','出國費用-日本'],
-  '電子商品':['電腦及周邊','3C產品'],
-  '汽機車':['油錢','停車費','保養費用','洗車費用','購車費用'],
-  '醫療保健':['診所就醫','購買藥物','保健食品','健檢檢查'],
-  '人情交際':['送禮','紅包','白包'],
-  '理財投資':['股票','頭期貸款','房屋貸款'],
-  '其他':['捐款','雜支','悠遊卡加值']
-};
+const EXPENSE_DATA = {'餐飲食品':['早餐','午餐','晚餐','宵夜','飲料','點心零嘴','食材','水果'],'服飾美容':['衣服褲子','配件','鞋子','剪髮','保養品'],'居家生活':['傢俱','家電','房租','水費','電費','瓦斯費','網路費','電話費','保險費','稅務','阿曦','阿霄','訂閱支出','寶貝寵物','洗衣費用','生活用品'],'運輸交通':['計程車','高鐵','飛機','火車','船費','過路費','公車'],'教育學習':['文具','書籍','學貸','補習費'],'休閒娛樂':['電影','KTV','玩具小物','旅行遊玩','遊戲','彩券','運動健身','出國費用-日本'],'電子商品':['電腦及周邊','3C產品'],'汽機車':['油錢','停車費','保養費用','洗車費用','購車費用'],'醫療保健':['診所就醫','購買藥物','保健食品','健檢檢查'],'人情交際':['送禮','紅包','白包'],'理財投資':['股票','頭期貸款','房屋貸款'],'其他':['捐款','雜支','悠遊卡加值']};
 const INCOME_CATS = ['薪水','差旅費','利息','股票','其他'];
-
-// ═══════════════════════════════════════════
-//  狀態
-// ═══════════════════════════════════════════
 let records = [], budgets = {}, customGroupBudgets = {};
 let accountBalances = Object.fromEntries(ACCOUNT_NAMES.map(n => [n, 0]));
 let pieChart = null, barChart = null, lineChart = null;
-let _lockDone = false;
-let batchRowCounter = 0;
+let _lockDone = false, batchRowCounter = 0;
 
-// ═══════════════════════════════════════════
-//  工具函式 - 修正日期處理
-// ═══════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const isCreditCard = n => n.includes('信用卡');
 
-/**
- * 將任何格式的日期轉換為 YYYY-MM-DD 字符串
- * 使用本地時區避免時區問題
- */
 function toDateStr(d) {
   if (!d) return '';
-  
-  // 如果已經是字符串格式
-  if (typeof d === 'string') {
-    const s = d.trim();
-    // 提取 YYYY-MM-DD 格式
-    const match = s.match(/(\d{4})-(\d{2})-(\d{2})/);
-    return match ? `${match[1]}-${match[2]}-${match[3]}` : '';
-  }
-  
-  // 如果是 Date 對象
-  if (d instanceof Date) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-  
-  return '';
+  const s = String(d);
+  return s.includes('T') ? s.slice(0, 10) : s;
 }
 
-/**
- * 解析日期字符串為 Date 對象（使用本地時區）
- * 支持 YYYY-MM-DD、YYYY-MM 等格式
- */
 function parseDate(s) {
   s = toDateStr(s);
   if (!s) return new Date();
-  
-  const parts = s.split('-');
-  
-  if (parts.length === 3) {
-    // 直接使用本地時區，避免 UTC 轉換偏差
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // 月份是 0-11
-    const day = parseInt(parts[2], 10);
-    return new Date(year, month, day);
-  }
-  
-  if (parts.length === 2) {
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    return new Date(year, month, 1);
-  }
-  
+  const p = s.split('-');
+  if (p.length === 2) return new Date(+p[0], +p[1]-1, 1);
+  if (p.length === 3) return new Date(+p[0], +p[1]-1, +p[2]);
   return new Date();
 }
 
@@ -320,13 +358,10 @@ function makeOptions(arr, el) {
   el.innerHTML = arr.map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
-// ═══════════════════════════════════════════
-//  LocalStorage
-// ═══════════════════════════════════════════
 function saveLocal() {
-  localStorage.setItem(LS.records,  JSON.stringify(records));
-  localStorage.setItem(LS.budgets,  JSON.stringify(budgets));
-  localStorage.setItem(LS.groups,   JSON.stringify(customGroupBudgets));
+  localStorage.setItem(LS.records, JSON.stringify(records));
+  localStorage.setItem(LS.budgets, JSON.stringify(budgets));
+  localStorage.setItem(LS.groups, JSON.stringify(customGroupBudgets));
   localStorage.setItem(LS.accounts, JSON.stringify(accountBalances));
 }
 
@@ -334,15 +369,12 @@ function loadLocal() {
   try {
     const r = localStorage.getItem(LS.records);
     if (r) { records = JSON.parse(r); records.forEach(x => { x.date = toDateStr(x.date); }); }
-    const b = localStorage.getItem(LS.budgets);  if (b) budgets = JSON.parse(b);
-    const g = localStorage.getItem(LS.groups);   if (g) customGroupBudgets = JSON.parse(g);
+    const b = localStorage.getItem(LS.budgets); if (b) budgets = JSON.parse(b);
+    const g = localStorage.getItem(LS.groups); if (g) customGroupBudgets = JSON.parse(g);
     const a = localStorage.getItem(LS.accounts); if (a) accountBalances = JSON.parse(a);
   } catch(e) { console.error('[本機讀取]', e); }
 }
 
-// ═══════════════════════════════════════════
-//  雲端
-// ═══════════════════════════════════════════
 function releaseLock() {
   if (_lockDone) return;
   _lockDone = true;
@@ -394,8 +426,7 @@ function fetchCloudData() {
       clearTimeout(timer);
       if (!res || res.status !== 'success' || !res.data) { fallback('雲端資料異常'); return; }
       const c = res.data;
-      if (c.accounts && typeof c.accounts === 'object' && Object.keys(c.accounts).length > 0)
-        accountBalances = c.accounts;
+      if (c.accounts && typeof c.accounts === 'object' && Object.keys(c.accounts).length > 0) accountBalances = c.accounts;
       if (c.budgets && typeof c.budgets === 'object') budgets = c.budgets;
       if (c.customGroupBudgets) {
         let cg = c.customGroupBudgets;
@@ -415,32 +446,17 @@ function fetchCloudData() {
     .catch(err => { clearTimeout(timer); fallback(err.message); });
 }
 
-// ═══════════════════════════════════════════
-//  UI 初始化
-// ═══════════════════════════════════════════
 function initAccountUI() {
-  $('accountGrid').innerHTML = ACCOUNT_NAMES.map(name => `
-    <div class="${isCreditCard(name) ? 'account-card credit' : 'account-card asset'}">
-      <span class="account-name">${name}</span>
-      <span class="account-val" id="val-${name}">$0</span>
-      <div class="account-input-group">
-        <input type="number" id="input-${name}" placeholder="設初值">
-        <button onclick="updateAccountInit('${name}')">改</button>
-      </div>
-    </div>`).join('');
+  $('accountGrid').innerHTML = ACCOUNT_NAMES.map(name => `<div class="${isCreditCard(name) ? 'account-card credit' : 'account-card asset'}"><span class="account-name">${name}</span><span class="account-val" id="val-${name}">$0</span><div class="account-input-group"><input type="number" id="input-${name}" placeholder="設初值"><button onclick="updateAccountInit('${name}')">改</button></div></div>`).join('');
 }
 
 function initSelects() {
-  ['editAccount','editFromAccount','editToAccount'].forEach(id => {
-    const e = $(id); if (e) makeOptions(ACCOUNT_NAMES, e);
-  });
+  ['editAccount','editFromAccount','editToAccount'].forEach(id => { const e = $(id); if (e) makeOptions(ACCOUNT_NAMES, e); });
   makeOptions(Object.keys(EXPENSE_DATA), $('budgetCategory'));
 }
 
 function initCustomGroupSubCats() {
-  $('customGroupSubCats').innerHTML = Object.entries(EXPENSE_DATA).map(([main, subs]) =>
-    `<optgroup label="【${main}】">${subs.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`
-  ).join('');
+  $('customGroupSubCats').innerHTML = Object.entries(EXPENSE_DATA).map(([main, subs]) => `<optgroup label="【${main}】">${subs.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`).join('');
 }
 
 function initMonthSelects() {
@@ -456,81 +472,18 @@ function initMonthSelects() {
 function initFilterCats() {
   const expHtml = Object.keys(EXPENSE_DATA).map(c => `<option value="${c}">${c}</option>`).join('');
   const incHtml = INCOME_CATS.map(c => `<option value="${c}">${c}</option>`).join('');
-  $('filterCategorySelect').innerHTML = `<option value="ALL">全部</option>
-    <optgroup label="💸 支出大項">${expHtml}</optgroup>
-    <optgroup label="💰 收入管道">${incHtml}</optgroup>
-    <option value="內部轉帳">🔄 內部轉帳</option>`;
+  $('filterCategorySelect').innerHTML = `<option value="ALL">全部</option><optgroup label="💸 支出大項">${expHtml}</optgroup><optgroup label="💰 收入管道">${incHtml}</optgroup><option value="內部轉帳">🔄 內部轉帳</option>`;
 }
 
-// ═══════════════════════════════════════════
-//  動態批次多筆記帳 UI 邏輯
-// ═══════════════════════════════════════════
 function addBatchRow() {
   batchRowCounter++;
   const id = batchRowCounter;
-  const todayStr = toDateStr(new Date());
-  
-  const rowHtml = `
-    <div class="batch-row" id="batch-row-${id}">
-      <div class="batch-cell" style="width: 90px;">
-        <label>交易類型</label>
-        <select id="batch-type-${id}" onchange="handleBatchTypeChange(${id})">
-          <option value="支出">支出 💸</option>
-          <option value="收入">收入 💰</option>
-          <option value="轉帳">轉帳 🔄</option>
-        </select>
-      </div>
-      <div class="batch-cell" style="width: 125px;">
-        <label>交易日期</label>
-        <input type="date" id="batch-date-${id}" value="${todayStr}">
-      </div>
-      
-      <!-- 一般帳戶選擇 (支出、收入) -->
-      <div class="batch-cell" id="batch-acc-group-${id}" style="width: 120px;">
-        <label>交易帳戶</label>
-        <select id="batch-account-${id}"></select>
-      </div>
-      
-      <!-- 轉帳帳戶選擇 (隱藏) -->
-      <div class="batch-cell" id="batch-from-group-${id}" style="width: 110px; display:none;">
-        <label>轉出帳戶</label>
-        <select id="batch-from-account-${id}"></select>
-      </div>
-      <div class="batch-cell" id="batch-to-group-${id}" style="width: 110px; display:none;">
-        <label>轉入帳戶</label>
-        <select id="batch-to-account-${id}"></select>
-      </div>
-      
-      <!-- 分類選擇 -->
-      <div class="batch-cell" id="batch-main-cat-group-${id}" style="width: 110px;">
-        <label id="batch-main-label-${id}">支出大項</label>
-        <select id="batch-main-cat-${id}" onchange="handleBatchMainCatChange(${id})"></select>
-      </div>
-      <div class="batch-cell" id="batch-sub-cat-group-${id}" style="width: 110px;">
-        <label>支出小項</label>
-        <select id="batch-sub-cat-${id}"></select>
-      </div>
-      
-      <div class="batch-cell" style="width: 90px;">
-        <label>金額</label>
-        <input type="number" id="batch-amount-${id}" placeholder="金額" inputmode="decimal">
-      </div>
-      <div class="batch-cell" style="flex: 1;">
-        <label>備註說明</label>
-        <input type="text" id="batch-note-${id}" placeholder="選填備註">
-      </div>
-      <button class="btn-remove-row" onclick="removeBatchRow(${id})" title="移除此列">✕</button>
-    </div>
-  `;
-  
+  const todayStr = new Date().toISOString().slice(0,10);
+  const rowHtml = `<div class="batch-row" id="batch-row-${id}"><div class="batch-cell" style="width:90px"><label>交易類型</label><select id="batch-type-${id}" onchange="handleBatchTypeChange(${id})"><option value="支出">支出 💸</option><option value="收入">收入 💰</option><option value="轉帳">轉帳 🔄</option></select></div><div class="batch-cell" style="width:125px"><label>交易日期</label><input type="date" id="batch-date-${id}" value="${todayStr}"></div><div class="batch-cell" id="batch-acc-group-${id}" style="width:120px"><label>交易帳戶</label><select id="batch-account-${id}"></select></div><div class="batch-cell" id="batch-from-group-${id}" style="width:110px;display:none"><label>轉出帳戶</label><select id="batch-from-account-${id}"></select></div><div class="batch-cell" id="batch-to-group-${id}" style="width:110px;display:none"><label>轉入帳戶</label><select id="batch-to-account-${id}"></select></div><div class="batch-cell" id="batch-main-cat-group-${id}" style="width:110px"><label id="batch-main-label-${id}">支出大項</label><select id="batch-main-cat-${id}" onchange="handleBatchMainCatChange(${id})"></select></div><div class="batch-cell" id="batch-sub-cat-group-${id}" style="width:110px"><label>支出小項</label><select id="batch-sub-cat-${id}"></select></div><div class="batch-cell" style="width:90px"><label>金額</label><input type="number" id="batch-amount-${id}" placeholder="金額" inputmode="decimal"></div><div class="batch-cell" style="flex:1"><label>備註說明</label><input type="text" id="batch-note-${id}" placeholder="選填備註"></div><button class="btn-remove-row" onclick="removeBatchRow(${id})" title="移除此列">✕</button></div>`;
   $('batchInputContainer').insertAdjacentHTML('beforeend', rowHtml);
-  
-  // 填入帳戶選項
   makeOptions(ACCOUNT_NAMES, $(`batch-account-${id}`));
   makeOptions(ACCOUNT_NAMES, $(`batch-from-account-${id}`));
   makeOptions(ACCOUNT_NAMES, $(`batch-to-account-${id}`));
-  
-  // 觸發初始類型選單渲染
   handleBatchTypeChange(id);
 }
 
@@ -548,15 +501,12 @@ function removeBatchRow(id) {
 function handleBatchTypeChange(id) {
   const type = $(`batch-type-${id}`).value;
   const isT = type === '轉帳', isI = type === '收入';
-  
   $(`batch-acc-group-${id}`).style.display = isT ? 'none' : 'block';
   $(`batch-from-group-${id}`).style.display = isT ? 'block' : 'none';
   $(`batch-to-group-${id}`).style.display = isT ? 'block' : 'none';
   $(`batch-main-cat-group-${id}`).style.display = isT ? 'none' : 'block';
   $(`batch-sub-cat-group-${id}`).style.display = (isT || isI) ? 'none' : 'block';
-  
   $(`batch-main-label-${id}`).textContent = isI ? '收入分類' : '支出大項';
-  
   const ms = $(`batch-main-cat-${id}`);
   ms.innerHTML = '';
   if (!isT) {
@@ -591,23 +541,18 @@ function syncTypeUI(prefix) {
   if (!isT && !isI) handleEditMainCatChange();
 }
 
-// 🚀 批次新增儲存功能
 function addBatchRecords() {
   const rows = $('batchInputContainer').children;
   let addedCount = 0;
   let validRecords = [];
-
   for (let row of rows) {
     const rowId = row.id.replace('batch-row-', '');
     const type = $(`batch-type-${rowId}`).value;
     const amount = parseInt($(`batch-amount-${rowId}`).value);
     const note = $(`batch-note-${rowId}`).value.trim();
     const date = toDateStr($(`batch-date-${rowId}`).value);
-
-    // 金額為空或小於等於 0 則視為不輸入（跳過）
     if (isNaN(amount) || amount <= 0) continue;
     if (!date) { showToast('⚠️ 請確實選擇日期'); return; }
-
     const rec = { id: Date.now() + addedCount, type, amount, note: note || '無備註', date };
     if (type === '轉帳') {
       const from = $(`batch-from-account-${rowId}`).value;
@@ -622,40 +567,31 @@ function addBatchRecords() {
     validRecords.push(rec);
     addedCount++;
   }
-
   if (validRecords.length === 0) {
     showToast('⚠️ 沒有可新增的有效帳目資料（請填入金額）');
     return;
   }
-
-  // 合併至主要資歷庫
   records.push(...validRecords);
   records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-  
   saveLocal(); 
   updateUI(); 
   pushToCloud();
-  
-  // 清空輸入表單，只保留一列全新空白
   $('batchInputContainer').innerHTML = '';
   addBatchRow();
   showToast(`✅ 成功批次同步新增 ${addedCount} 筆交易！`);
 }
 
-// ═══════════════════════════════════════════
-//  Modal 編輯
-// ═══════════════════════════════════════════
 function openEditModal(id) {
   const r = records.find(x => x.id === id); if (!r) return;
   $('editRecordId').value = r.id;
-  $('editType').value    = r.type;
-  $('editDate').value    = r.date;
-  $('editAmount').value  = r.amount;
-  $('editNote').value    = r.note === '無備註' ? '' : (r.note || '');
+  $('editType').value = r.type;
+  $('editDate').value = r.date;
+  $('editAmount').value = r.amount;
+  $('editNote').value = r.note === '無備註' ? '' : (r.note || '');
   syncTypeUI('edit');
   if (r.type === '轉帳') {
     $('editFromAccount').value = r.fromAccount || '';
-    $('editToAccount').value   = r.toAccount   || '';
+    $('editToAccount').value = r.toAccount || '';
   } else {
     $('editAccount').value = r.account || '';
     const ms = $('editMainCategory');
@@ -669,12 +605,12 @@ function openEditModal(id) {
 function closeEditModal() { $('editModal').style.display = 'none'; }
 
 function saveEditRecord() {
-  const id  = parseInt($('editRecordId').value);
+  const id = parseInt($('editRecordId').value);
   const idx = records.findIndex(x => x.id === id); if (idx === -1) return;
-  const type   = $('editType').value;
+  const type = $('editType').value;
   const amount = parseInt($('editAmount').value);
-  const note   = $('editNote').value.trim();
-  const date   = toDateStr($('editDate').value);
+  const note = $('editNote').value.trim();
+  const date = toDateStr($('editDate').value);
   if (!date || isNaN(amount) || amount <= 0) { showToast('⚠️ 請填入日期與金額'); return; }
   const updated = { id, type, amount, note: note || '無備註', date };
   if (type === '轉帳') {
@@ -682,9 +618,9 @@ function saveEditRecord() {
     if (from === to) { showToast('⚠️ 轉帳帳戶不能相同'); return; }
     updated.fromAccount = from; updated.toAccount = to;
   } else {
-    updated.account      = $('editAccount').value;
+    updated.account = $('editAccount').value;
     updated.mainCategory = $('editMainCategory').value;
-    updated.subCategory  = type === '支出' ? $('editSubCategory').value : '';
+    updated.subCategory = type === '支出' ? $('editSubCategory').value : '';
   }
   records[idx] = updated;
   records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
@@ -705,9 +641,6 @@ function clearAllRecords() {
   records = []; saveLocal(); updateUI(); pushToCloud();
 }
 
-// ═══════════════════════════════════════════
-//  帳戶 & 預算
-// ═══════════════════════════════════════════
 function updateAccountInit(name) {
   const v = parseInt($(`input-${name}`).value); if (isNaN(v)) return;
   accountBalances[name] = v; $(`input-${name}`).value = '';
@@ -723,12 +656,9 @@ function saveBudget() {
   showToast(`✅ 「${cat}」預算設定完成`);
 }
 
-// ═══════════════════════════════════════════
-//  自訂預算群組
-// ═══════════════════════════════════════════
 function saveCustomGroupBudget() {
   const name = $('customGroupName').value.trim();
-  const amt  = parseInt($('customGroupAmount').value);
+  const amt = parseInt($('customGroupAmount').value);
   const subs = [...$('customGroupSubCats').selectedOptions].map(o => o.value);
   if (!name) { showToast('⚠️ 請填寫群組名稱'); return; }
   if (isNaN(amt) || amt < 0) { showToast('⚠️ 請輸入有效金額'); return; }
@@ -745,17 +675,16 @@ function editBudgetAmount(cat, old) {
   const n = parseInt(s); if (isNaN(n) || n < 0) return;
   budgets[cat] = n; saveLocal(); updateUI(); pushToCloud();
 }
+
 function editCustomGroupAmount(name, old) {
   const s = prompt(`群組「${name}」新預算：`, old); if (s === null) return;
   const n = parseInt(s); if (isNaN(n) || n < 0) return;
   customGroupBudgets[name].limit = n; saveLocal(); updateUI(); pushToCloud();
 }
+
 function deleteBudget(cat) { if (!confirm(`確定刪除「${cat}」月預算？`)) return; delete budgets[cat]; saveLocal(); updateUI(); pushToCloud(); }
 function deleteCustomGroupBudget(name) { if (!confirm(`確定刪除群組「${name}」？`)) return; delete customGroupBudgets[name]; saveLocal(); updateUI(); pushToCloud(); }
 
-// ═══════════════════════════════════════════
-//  CSV
-// ═══════════════════════════════════════════
 function exportToCSV() {
   let csv = "=== 系統帳戶初始設定配額 ===\n帳戶名稱,初始金額\n";
   ACCOUNT_NAMES.forEach(n => { csv += `${n},${accountBalances[n]}\n`; });
@@ -769,7 +698,7 @@ function exportToCSV() {
   });
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'})),
-    download: `智慧記帳本_${toDateStr(new Date())}.csv`
+    download: `智慧記帳本_${new Date().toISOString().slice(0,10)}.csv`
   });
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   showToast('📊 CSV 已匯出');
@@ -808,19 +737,18 @@ function importFromCSV(event) {
   reader.readAsText(file, 'UTF-8');
 }
 
-// ═══════════════════════════════════════════
-//  UI 開關
-// ═══════════════════════════════════════════
 function handleTimeModeChange() {
   const m = $('filterTimeMode').value;
   $('filterMonthGroup').style.display = m === 'month' ? 'block' : 'none';
-  $('filterDaysGroup').style.display  = m === 'days'  ? 'block' : 'none';
+  $('filterDaysGroup').style.display = m === 'days' ? 'block' : 'none';
   updateUI();
 }
+
 function toggleHistoryCollapse() {
   const w = $('historyListWrapper'), b = $('btnToggleCollapse');
   b.textContent = w.classList.toggle('collapsed') ? '📁 展開' : '📂 收合';
 }
+
 function toggleChartsCollapse() {
   const w = $('chartsWrapper'), b = $('btnToggleCharts');
   const c = w.classList.toggle('collapsed');
@@ -828,51 +756,47 @@ function toggleChartsCollapse() {
   if (!c) updateUI();
 }
 
-// ═══════════════════════════════════════════
-//  主渲染
-// ═══════════════════════════════════════════
 function updateUI() {
   const selBudgetMonth = $('budgetMonthSelect').value;
   const bDate = parseDate(selBudgetMonth);
   const bYear = bDate.getFullYear(), bMon = bDate.getMonth() + 1;
   const chartStart = parseDate($('analysisStartDate').value);
-  const chartEnd   = parseDate($('analysisEndDate').value);
-  const filterMode  = $('filterTimeMode').value;
+  const chartEnd = parseDate($('analysisEndDate').value);
+  const filterMode = $('filterTimeMode').value;
   const filterMonth = $('filterMonthSelect').value;
   const filterStart = parseDate($('filterStartDate').value);
-  const filterEnd   = parseDate($('filterEndDate').value);
-  const filterCat   = $('filterCategorySelect').value;
-  const kw    = $('searchKeyword').value.trim();
+  const filterEnd = parseDate($('filterEndDate').value);
+  const filterCat = $('filterCategorySelect').value;
+  const kw = $('searchKeyword').value.trim();
   const kwLow = kw.toLowerCase();
 
-  const balances     = {...accountBalances};
-  const expChart     = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
-  const incChart     = Object.fromEntries(INCOME_CATS.map(k => [k, 0]));
-  const monBudSpent  = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
+  const balances = {...accountBalances};
+  const expChart = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
+  const incChart = Object.fromEntries(INCOME_CATS.map(k => [k, 0]));
+  const monBudSpent = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
   const yearBudSpent = Object.fromEntries(Object.keys(EXPENSE_DATA).map(k => [k, 0]));
-  const grpMonSpent  = Object.fromEntries(Object.keys(customGroupBudgets).map(k => [k, 0]));
-  const grpYrSpent   = Object.fromEntries(Object.keys(customGroupBudgets).map(k => [k, 0]));
-  const assetLine    = {};
+  const grpMonSpent = Object.fromEntries(Object.keys(customGroupBudgets).map(k => [k, 0]));
+  const grpYrSpent = Object.fromEntries(Object.keys(customGroupBudgets).map(k => [k, 0]));
+  const assetLine = {};
   let totalInc = 0, totalExp = 0;
 
   [...records].reverse().forEach(r => {
     r.date = toDateStr(r.date);
     const rDate = parseDate(r.date);
-    const rYM   = r.date.slice(0, 7);
+    const rYM = r.date.slice(0, 7);
     const rYear = parseInt(r.date.slice(0, 4));
-    const rMon  = parseInt(r.date.slice(5, 7));
+    const rMon = parseInt(r.date.slice(5, 7));
 
     if (r.type === '轉帳') {
       if (balances[r.fromAccount] !== undefined) balances[r.fromAccount] -= r.amount;
-      if (balances[r.toAccount]   !== undefined) {
+      if (balances[r.toAccount] !== undefined) {
         if (isCreditCard(r.toAccount)) balances[r.toAccount] -= r.amount;
         else balances[r.toAccount] += r.amount;
       }
     } else if (r.type === '收入') {
       totalInc += r.amount;
       if (balances[r.account] !== undefined) balances[r.account] += r.amount;
-      if (rDate >= chartStart && rDate <= chartEnd && incChart[r.mainCategory] !== undefined)
-        incChart[r.mainCategory] += r.amount;
+      if (rDate >= chartStart && rDate <= chartEnd && incChart[r.mainCategory] !== undefined) incChart[r.mainCategory] += r.amount;
     } else {
       totalExp += r.amount;
       if (balances[r.account] !== undefined) {
@@ -887,16 +811,14 @@ function updateUI() {
         if (yearBudSpent[r.mainCategory] !== undefined) yearBudSpent[r.mainCategory] += r.amount;
         Object.entries(customGroupBudgets).forEach(([g, cfg]) => { if (cfg.subCats?.includes(r.subCategory)) grpYrSpent[g] = (grpYrSpent[g]||0) + r.amount; });
       }
-      if (rDate >= chartStart && rDate <= chartEnd && expChart[r.mainCategory] !== undefined)
-        expChart[r.mainCategory] += r.amount;
+      if (rDate >= chartStart && rDate <= chartEnd && expChart[r.mainCategory] !== undefined) expChart[r.mainCategory] += r.amount;
     }
     let tA = 0, tL = 0;
     ACCOUNT_NAMES.forEach(n => isCreditCard(n) ? tL += (balances[n]||0) : tA += (balances[n]||0));
     assetLine[r.date] = tA - tL;
   });
 
-  // 看板
-  $('totalIncome').textContent  = totalInc.toLocaleString();
+  $('totalIncome').textContent = totalInc.toLocaleString();
   $('totalExpense').textContent = totalExp.toLocaleString();
   let totA = 0, totL = 0;
   ACCOUNT_NAMES.forEach(n => {
@@ -915,30 +837,21 @@ function updateUI() {
   netEl.textContent = `$${net.toLocaleString()}`;
   netEl.style.color = net < 0 ? '#fca5a5' : 'white';
 
-  // 更新預算控管顯示...（省略詳細代碼以節省篇幅）
-
-  // 歷史明細
-  const filterMonthDate = parseDate(filterMonth);
-  const monthStr = filterMonth;
-  
   const filtered = records.filter(r => {
     r.date = toDateStr(r.date);
     const rDate = parseDate(r.date);
     let timeMatch = false;
     if (filterMode === 'month') {
-      timeMatch = r.date.slice(0, 7) === monthStr;
+      timeMatch = r.date.slice(0, 7) === filterMonth;
     } else {
       timeMatch = rDate >= filterStart && rDate <= filterEnd;
     }
-    
     let catMatch = filterCat === 'ALL' || r.mainCategory === filterCat || (r.type === '內部轉帳' && filterCat === '內部轉帳');
     if (r.type === '轉帳') catMatch = filterCat === 'ALL' || filterCat === '內部轉帳';
-    
     let kwMatch = !kw || (r.note && r.note.toLowerCase().includes(kwLow)) || (r.mainCategory && r.mainCategory.toLowerCase().includes(kwLow));
-    
     return timeMatch && catMatch && kwMatch;
   });
-  
+
   $('searchCount').textContent = filtered.length > 0 ? `共 ${filtered.length} 筆` : '';
   $('recordList').innerHTML = filtered.map(r => {
     const amount = String(r.amount);
@@ -948,22 +861,9 @@ function updateUI() {
     const borderClass = isInc ? 'income-border' : (isExp ? 'expense-border' : 'transfer-border');
     const amountColor = isInc ? 'var(--success)' : (isTrf ? 'var(--purple)' : 'var(--danger)');
     const amountPrefix = isInc ? '+' : (isTrf ? '→' : '−');
-    
-    return `<div class="history-item">
-      <div class="item-left ${borderClass}">
-        <div class="item-date">${highlight(r.date, kw)}</div>
-        <div class="item-title">${highlight(r.type, kw)} ${r.mainCategory && !isTrf ? `<span class="item-acc-tag">${highlight(r.mainCategory, kw)}</span>` : ''} ${r.subCategory && isExp ? `<span class="item-sub-tag">${highlight(r.subCategory, kw)}</span>` : ''}</div>
-        <div class="item-note">${highlight(r.note, kw)}</div>
-      </div>
-      <div class="item-right">
-        <div class="item-amount" style="color:${amountColor}">${amountPrefix}$${highlight(amount, kw)}</div>
-        <button class="btn-item-action btn-item-edit" onclick="openEditModal(${r.id})">編</button>
-        <button class="btn-item-action btn-item-delete" onclick="deleteRecord(${r.id})">刪</button>
-      </div>
-    </div>`;
+    return `<div class="history-item"><div class="item-left ${borderClass}"><div class="item-date">${highlight(r.date, kw)}</div><div class="item-title">${highlight(r.type, kw)} ${r.mainCategory && !isTrf ? `<span class="item-acc-tag">${highlight(r.mainCategory, kw)}</span>` : ''} ${r.subCategory && isExp ? `<span class="item-sub-tag">${highlight(r.subCategory, kw)}</span>` : ''}</div><div class="item-note">${highlight(r.note, kw)}</div></div><div class="item-right"><div class="item-amount" style="color:${amountColor}">${amountPrefix}$${highlight(amount, kw)}</div><button class="btn-item-action btn-item-edit" onclick="openEditModal(${r.id})">編</button><button class="btn-item-action btn-item-delete" onclick="deleteRecord(${r.id})">刪</button></div></div>`;
   }).join('');
 
-  // 圖表
   if (!$('chartsWrapper').classList.contains('collapsed')) {
     drawExpensePieChart(expChart);
     drawIncomeBarChart(incChart);
@@ -971,18 +871,13 @@ function updateUI() {
   }
 }
 
-// 圖表函式（保留原有邏輯）
 function drawExpensePieChart(data) {
   const ctx = $('expensePieChart')?.getContext('2d');
   if (!ctx) return;
   const labels = Object.keys(data).filter(k => data[k] > 0);
   const values = labels.map(k => data[k]);
   if (pieChart) pieChart.destroy();
-  pieChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data: values, backgroundColor: ['#3b5bdb','#7048e8','#e03131','#2f9e44','#e67700','#087e8b','#f77f00','#d62828','#f4a460','#ff6b6b','#ffd700','#90ee90'] }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-  });
+  pieChart = new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data: values, backgroundColor: ['#3b5bdb','#7048e8','#e03131','#2f9e44','#e67700','#087e8b','#f77f00','#d62828','#f4a460','#ff6b6b','#ffd700','#90ee90'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
 }
 
 function drawIncomeBarChart(data) {
@@ -991,11 +886,7 @@ function drawIncomeBarChart(data) {
   const labels = Object.keys(data).filter(k => data[k] > 0);
   const values = labels.map(k => data[k]);
   if (barChart) barChart.destroy();
-  barChart = new Chart(ctx, {
-    type: 'bar',
-    data: { labels, datasets: [{ label: '金額', data: values, backgroundColor: '#2f9e44' }] },
-    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-  });
+  barChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: '金額', data: values, backgroundColor: '#2f9e44' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
 }
 
 function drawAssetLineChart(data) {
@@ -1004,16 +895,9 @@ function drawAssetLineChart(data) {
   const dates = Object.keys(data).sort();
   const values = dates.map(d => data[d]);
   if (lineChart) lineChart.destroy();
-  lineChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: dates, datasets: [{ label: '淨資產', data: values, borderColor: '#3b5bdb', backgroundColor: 'rgba(59,91,219,.1)', tension: .3 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } }
-  });
+  lineChart = new Chart(ctx, { type: 'line', data: { labels: dates, datasets: [{ label: '淨資產', data: values, borderColor: '#3b5bdb', backgroundColor: 'rgba(59,91,219,.1)', tension: .3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } } } });
 }
 
-// ═══════════════════════════════════════════
-//  初始化 & 主程式
-// ═══════════════════════════════════════════
 window.addEventListener('load', () => {
   initAccountUI();
   initSelects();
