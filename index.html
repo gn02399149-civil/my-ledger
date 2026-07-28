@@ -434,7 +434,7 @@ const EXPENSE_DATA = {
 const INCOME_CATS = ['薪水','差旅費','利息','股票','其他'];
 
 // ═══════════════════════════════════════════
-//  雲端單一主權狀態機制 (已完全移出 LocalStorage) [source: 1]
+//  雲端狀態與資料結構
 // ═══════════════════════════════════════════
 let records = [], budgets = {}, customGroupBudgets = {};
 let accountBalances = Object.fromEntries(ACCOUNT_NAMES.map(n => [n, 0]));
@@ -457,7 +457,6 @@ function escHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// 📌 日期轉換優化：輸入端的 HTML 控件使用 YYYY-MM-DD，內部與雲端全部強制改為 YYYY/MM/DD [source: 1]
 function toCloudDateStr(s) {
   if (!s) return '';
   let str = String(s).trim();
@@ -512,22 +511,85 @@ function setCloudStatus(msg, spinning) {
   $('cloudStatusDot').className = 'sync-dot' + (spinning ? ' spinning' : '');
 }
 
-function buildPayload() {
-  return {
+// ═══════════════════════════════════════════
+//  增量同步 (Incremental Sync) API 發送模組
+// ═══════════════════════════════════════════
+function sendCloudAction(payload, successMsg = '已同步') {
+  setCloudStatus('同步中...', true);
+  return fetch(CLOUD_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    const isOk = res && (res.status === 'success' || res.result === 'success');
+    setCloudStatus(isOk ? successMsg : '❌ 失敗', false);
+    return res;
+  })
+  .catch(err => {
+    console.error('[雲端同步失敗]', err);
+    setCloudStatus('⚠️ 離線', false);
+  });
+}
+
+// 專用增量操作對應函數
+function pushAddRecords(newRecords) {
+  return sendCloudAction({
+    action: 'addRecords',
+    records: newRecords.map(r => ({ ...r, date: toCloudDateStr(r.date) }))
+  });
+}
+
+function pushUpdateRecord(updatedRecord) {
+  return sendCloudAction({
+    action: 'updateRecord',
+    record: { ...updatedRecord, date: toCloudDateStr(updatedRecord.date) }
+  });
+}
+
+function pushDeleteRecord(id) {
+  return sendCloudAction({
+    action: 'deleteRecord',
+    id: id
+  });
+}
+
+function pushClearAllRecords() {
+  return sendCloudAction({
+    action: 'clearAllRecords'
+  });
+}
+
+function pushAccounts() {
+  return sendCloudAction({
+    action: 'updateAccounts',
+    accounts: ACCOUNT_NAMES.map(k => [k, accountBalances[k] || 0])
+  });
+}
+
+function pushBudgets() {
+  return sendCloudAction({
+    action: 'updateBudgets',
+    budgets: Object.entries(budgets)
+  });
+}
+
+function pushCustomGroupBudgets() {
+  return sendCloudAction({
+    action: 'updateCustomGroupBudgets',
+    customGroupBudgets: JSON.stringify(customGroupBudgets)
+  });
+}
+
+// 全量備份專用（僅用於 CSV 匯入全覆蓋）
+function pushFullSync() {
+  return sendCloudAction({
     action: 'syncAll',
     accounts: ACCOUNT_NAMES.map(k => [k, accountBalances[k] || 0]),
     budgets: Object.entries(budgets),
     customGroupBudgets: JSON.stringify(customGroupBudgets),
-    records: records.map(r => { r.date = toCloudDateStr(r.date); return r; })
-  };
-}
-
-function pushToCloud() {
-  setCloudStatus('同步中...', true);
-  fetch(CLOUD_URL, { method: 'POST', body: JSON.stringify(buildPayload()) })
-    .then(r => r.json())
-    .then(res => setCloudStatus(res.status === 'success' ? '已同步' : '❌ 失敗', false))
-    .catch(() => setCloudStatus('⚠️ 離線', false));
+    records: records.map(r => ({ ...r, date: toCloudDateStr(r.date) }))
+  });
 }
 
 function fetchCloudData() {
@@ -728,7 +790,8 @@ function addBatchRecords() {
   records.push(...validRecords);
   records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
   
-  updateUI(); pushToCloud();
+  updateUI();
+  pushAddRecords(validRecords); // 僅上傳新增紀錄
   $('batchInputContainer').innerHTML = ''; addBatchRow();
   showToast(`✅ 成功同步新增 ${validRecords.length} 筆交易！`);
 }
@@ -796,19 +859,25 @@ function saveEditRecord() {
   }
   records[idx] = updated;
   records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-  updateUI(); pushToCloud(); closeEditModal();
+  updateUI();
+  pushUpdateRecord(updated); // 僅上傳該筆更新
+  closeEditModal();
   showToast('✅ 已更新異動');
 }
 
 function deleteRecord(id) {
   if (!confirm('確定刪除這筆記錄？')) return;
   records = records.filter(r => r.id !== id);
-  updateUI(); pushToCloud(); showToast('🗑️ 已刪除明細');
+  updateUI();
+  pushDeleteRecord(id); // 僅上傳刪除 ID
+  showToast('🗑️ 已刪除明細');
 }
 
 function clearAllRecords() {
   if (!confirm('確定清空全部明細？此操作將覆蓋雲端！')) return;
-  records = []; updateUI(); pushToCloud();
+  records = [];
+  updateUI();
+  pushClearAllRecords();
 }
 
 // ═══════════════════════════════════════════
@@ -817,14 +886,18 @@ function clearAllRecords() {
 function updateAccountInit(name) {
   const v = parseInt($(`input-${name}`).value, 10); if (isNaN(v)) return;
   accountBalances[name] = v; $(`input-${name}`).value = '';
-  updateUI(); pushToCloud(); showToast(`✅ ${name} 初始值已設定`);
+  updateUI();
+  pushAccounts(); // 僅同步帳戶設定
+  showToast(`✅ ${name} 初始值已設定`);
 }
 
 function saveBudget() {
   const cat = $('budgetCategory').value, amt = parseInt($('budgetAmountInput').value, 10);
   if (isNaN(amt) || amt < 0) return;
   budgets[cat] = amt; $('budgetAmountInput').value = '';
-  updateUI(); pushToCloud(); showToast(`✅ 「${cat}」月預算已同步`);
+  updateUI();
+  pushBudgets(); // 僅同步單一預算變更
+  showToast(`✅ 「${cat}」月預算已同步`);
 }
 
 function saveCustomGroupBudget() {
@@ -834,21 +907,23 @@ function saveCustomGroupBudget() {
   if (!name || isNaN(amt) || subs.length === 0) { showToast('⚠️ 請填妥群組名稱、金額及細項'); return; }
   customGroupBudgets[name] = { limit: amt, subCats: subs };
   $('customGroupName').value = ''; $('customGroupAmount').value = ''; $('customGroupSubCats').selectedIndex = -1;
-  updateUI(); pushToCloud(); showToast(`✅ 自訂群組「${name}」已建立`);
+  updateUI();
+  pushCustomGroupBudgets(); // 僅同步自訂群組預算
+  showToast(`✅ 自訂群組「${name}」已建立`);
 }
 
 function editBudgetAmount(cat, old) {
   const s = prompt(`更新「${cat}」月預算：`, old); if (s === null) return;
   const n = parseInt(s, 10); if (isNaN(n) || n < 0) return;
-  budgets[cat] = n; updateUI(); pushToCloud();
+  budgets[cat] = n; updateUI(); pushBudgets();
 }
 function editCustomGroupAmount(name, old) {
   const s = prompt(`更新自訂群組「${name}」月預算：`, old); if (s === null) return;
   const n = parseInt(s, 10); if (isNaN(n) || n < 0) return;
-  customGroupBudgets[name].limit = n; updateUI(); pushToCloud();
+  customGroupBudgets[name].limit = n; updateUI(); pushCustomGroupBudgets();
 }
-function deleteBudget(cat) { if (confirm(`刪除「${cat}」預算？`)) { delete budgets[cat]; updateUI(); pushToCloud(); } }
-function deleteCustomGroupBudget(name) { if (confirm(`刪除自訂群組「${name}」？`)) { delete customGroupBudgets[name]; updateUI(); pushToCloud(); } }
+function deleteBudget(cat) { if (confirm(`刪除「${cat}」預算？`)) { delete budgets[cat]; updateUI(); pushBudgets(); } }
+function deleteCustomGroupBudget(name) { if (confirm(`刪除自訂群組「${name}」？`)) { delete customGroupBudgets[name]; updateUI(); pushCustomGroupBudgets(); } }
 
 // ═══════════════════════════════════════════
 //  CSV 匯出/匯入
@@ -897,7 +972,9 @@ function importFromCSV(event) {
       if (!confirm(`確認匯入 ${imported.length} 筆資料並蓋寫雲端？`)) return;
       accountBalances = parsedAcc;
       records = imported.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-      updateUI(); pushToCloud(); showToast(`✅ 成功匯入 ${imported.length} 筆`);
+      updateUI();
+      pushFullSync(); // 批次 CSV 匯入全覆蓋
+      showToast(`✅ 成功匯入 ${imported.length} 筆`);
     } catch(err) { showToast('❌ 匯入失敗：' + err.message); }
   };
   reader.readAsText(file, 'UTF-8');
@@ -924,7 +1001,7 @@ function toggleChartsCollapse() {
 //  主要數據計算與畫面渲染核心
 // ═══════════════════════════════════════════
 function updateUI() {
-  const selBudgetMonth = toCloudDateStr($('budgetMonthSelect').value).slice(0, 7); // YYYY/MM
+  const selBudgetMonth = toCloudDateStr($('budgetMonthSelect').value).slice(0, 7);
   const bDate = parseDate(selBudgetMonth + "/01");
   const bYear = bDate.getFullYear(), bMon = bDate.getMonth() + 1;
   
@@ -947,7 +1024,6 @@ function updateUI() {
   const assetLine    = {};
   let totalInc = 0, totalExp = 0;
 
-// 先確保 records 是依據時間由舊到新累加資產，才能正確產生歷史走勢 [source: 1]
   [...records].reverse().forEach(r => {
     r.date = toCloudDateStr(r.date);
     const rDate = parseDate(r.date);
@@ -956,15 +1032,12 @@ function updateUI() {
     const rMon  = parseInt(r.date.slice(5, 7), 10);
 
     if (r.type === '轉帳') {
-      // 轉出帳戶：無論是普通帳戶還是信用卡（極少見），資產都是減少或負債增加
       if (balances[r.fromAccount] !== undefined) {
-        if (isCreditCard(r.fromAccount)) balances[r.fromAccount] += r.amount; // 信用卡轉出代表欠款增加
+        if (isCreditCard(r.fromAccount)) balances[r.fromAccount] += r.amount;
         else balances[r.fromAccount] -= r.amount;
       }
-      // 轉入帳戶
       if (balances[r.toAccount] !== undefined) {
         if (isCreditCard(r.toAccount)) {
-          // 關鍵修正：繳納信用卡費時，信用卡的「應繳負債」應該要減少
           balances[r.toAccount] -= r.amount; 
         } else {
           balances[r.toAccount] += r.amount;
@@ -973,7 +1046,7 @@ function updateUI() {
     } else if (r.type === '收入') {
       totalInc += r.amount;
       if (balances[r.account] !== undefined) {
-        if (isCreditCard(r.account)) balances[r.account] -= r.amount; // 收入進信用卡代表負債減少
+        if (isCreditCard(r.account)) balances[r.account] -= r.amount;
         else balances[r.account] += r.amount;
       }
       if (rDate >= chartStart && rDate <= chartEnd && incChart[r.mainCategory] !== undefined)
@@ -981,8 +1054,8 @@ function updateUI() {
     } else {
       totalExp += r.amount;
       if (balances[r.account] !== undefined) {
-        if (isCreditCard(r.account)) balances[r.account] += r.amount; // 刷卡消費：信用卡負債增加
-        else balances[r.account] -= r.amount; // 普通消費：帳戶餘額減少
+        if (isCreditCard(r.account)) balances[r.account] += r.amount;
+        else balances[r.account] -= r.amount;
       }
       if (rYM === selBudgetMonth) {
         if (monBudSpent[r.mainCategory] !== undefined) monBudSpent[r.mainCategory] += r.amount;
@@ -996,12 +1069,11 @@ function updateUI() {
         expChart[r.mainCategory] += r.amount;
     }
     
-    // 即時計算當天的資產與負債，用於產出正確的折線圖
     let tA = 0, tL = 0;
     ACCOUNT_NAMES.forEach(n => isCreditCard(n) ? tL += (balances[n]||0) : tA += (balances[n]||0));
     assetLine[r.date] = tA - tL;
   });
-  // 資產儀表看板
+
   $('totalIncome').textContent  = totalInc.toLocaleString();
   $('totalExpense').textContent = totalExp.toLocaleString();
   let totA = 0, totL = 0;
@@ -1021,7 +1093,6 @@ function updateUI() {
   netEl.textContent = `$${net.toLocaleString()}`;
   netEl.style.color = net < 0 ? '#fca5a5' : 'white';
 
-  // 流水帳歷史明細渲染
   let html = '', count = 0;
   records.forEach(r => {
     const rDate = parseDate(r.date);
@@ -1069,7 +1140,6 @@ function updateUI() {
   $('searchCount').textContent = kwLow ? `找到 ${count} 筆符合條件記錄` : (count > 0 ? `共 ${count} 筆` : '');
   $('recordList').innerHTML = count === 0 ? `<p style="text-align:center;color:var(--ink-faint);padding:20px 0">此期間查無記帳明細</p>` : html;
 
-  // 雙軌預算
   const budgetEl = $('budgetListSection'); budgetEl.innerHTML = '';
   let hasAny = false, sumB = 0, sumS = 0, sumYB = 0, sumYS = 0;
 
@@ -1208,7 +1278,6 @@ function renderCharts(start, end, expMap, incMap, assetLine) {
     clearTimeout(_searchDebounce); _searchDebounce = setTimeout(updateUI, 250);
   });
 
-  // 開機即從雲端索取單一主權資料庫
   fetchCloudData();
 })();
 </script>
